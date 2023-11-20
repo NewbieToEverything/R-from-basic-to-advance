@@ -1,0 +1,169 @@
+# Basic: apply family {#apply-family}
+
+数据分析任务中，常常会需要在数据的某个维度方向上执行一套操作，例如求一个 data.frame 中存储的所有变量的均值（列方向），如果用`for`结构可以写成如下的样子：
+```{r for_colmean}
+df <- 
+  data.frame(
+    x = sample(1:5, 10, replace = TRUE),
+    y = sample(1:5, 10, replace = TRUE, prob = c(0.5/5, 1/5, 2/5, 1/5, 0.5/5)), 
+    z = sample(1:5, 10, replace = TRUE, prob = c(1.5/5, 0.9/5, 0.2/5, 0.9/5, 1.5/5))
+  )
+df
+n_var <- ncol(df)
+mean_var <- vector(mode = "numeric", length = n_var)
+for (i in seq_along(mean_var)) {
+  mean_var[i] <- mean(df[[i]])
+}
+mean_var
+colMeans(df)
+```
+
+这种同一套操作重复多次使用`for`结构可以解决，但会带来的问题是需要额外写不少代码，例如需要提前初始化输出结果，需要设定`for`结构中的`var`的`seq`等。 R 的 base 包提供了一个`apply()`函数族，包括`apply()`、`lappy()`、`sapply()`等，能够在完成任务的同时，相比`for`结构简单很多。
+
+
+## Use function as argument
+
+`apply()`函数族的核心思想是把 function 作为 argument，这是 R 这种函数式编程（functional programming）语言的一个重要特点。要理解这个做法，先来看一个简单的例子（来自“R for Data Science”一书的 [For loops vs. functionals](https://r4ds.had.co.nz/iteration.html?q=apply#for-loops-vs.-functionals) 小节）。
+
+假定经常需要计算变量的均值，每次都要重写一遍上述含`for`结构的代码，会很麻烦，所以干脆把上述代码 define 成一个 function：
+```{r eval = FALSE}
+col_mean <- function(df) {
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- mean(df[[i]])
+  }
+  return(output)
+}
+```
+
+相应的，可以把中数（median）和标准差（standard deviation, sd）也都各自定义了一个函数，
+```{r eval = FALSE}
+col_median <- function(df) {
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- median(df[[i]])
+  }
+  return(output)
+}
+col_sd <- function(df) {
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- sd(df[[i]])
+  }
+  return(output)
+}
+```
+
+但实际上可以看出来，上面 3 个自定义函数只有第 4 行才是不一样的，其他都是完全相同的，也就意味着这 3 个函数完全可以合并成 1 个，只不过需要将不同的部分变成一个 argument，
+```{r fun_as_arg}
+col_summary <- function(df, fun) {
+  out <- vector("double", length(df))
+  # print(fun)
+  for (i in seq_along(df)) {
+    out[i] <- fun(df[[i]])
+  }
+  return(out)
+}
+col_summary(df, mean)
+col_summary(df, median)
+col_summary(df, sd)
+```
+
+
+## The basic usage of `apply()`
+
+`apply()`函数族就是将需要重复多次的操作所对应的 function （可以是 anonymous function）作为 argument，来实现和`for`结构一样的效果。例如，想要实现与`col_summary()`相同的效果，使用`apply()`可以大幅缩短代码行数：
+
+`apply(X, MARGIN, FUN, ..., simplify = TRUE)`
+
+- `X`: an array, including a matrix. If `X` is not an array but an object of a class with a non-null dim value (such as a data frame), apply attempts to coerce it to an array via `as.matrix` if it is two-dimensional (e.g., a data frame) or via `as.array`.
+- `MARGIN`: a vector giving the subscripts which the function will be applied over. E.g., for a matrix 1 indicates rows, 2 indicates columns.
+- `simplify`: a logical indicating whether results should be simplified if possible. 
+
+```{r apply}
+apply(df, MARGIN = 2, FUN = mean)
+apply(df, MARGIN = 2, FUN = median)
+apply(df, MARGIN = 2, FUN = sd)
+```
+
+`apply()`本质上就是把`FUN`应用到`df`的指定维度上，实际操作的时候，`apply()`会先检测是要处理哪个 object，应用到哪个维度，然后把数据按照维度拆成一个个小的部分，然后把这些小的部分传递给`FUN`提供的函数作为输入参数来执行。
+
+`apply()`的输出结果根据具体情况的不同，可以是 matrix、vector 或 list（`simplify = FALSE`）。
+
+```{r apply_diff_value}
+# matrix
+apply(df, 2, \(x) x + 1)
+# list
+apply(df, 2, \(x) x + 1, simplify = FALSE)
+```
+
+## `lapply()` and `sapply()`
+
+`lapply()`和`sapply()`可以视作是不同版本的`apply()`。
+
+1. `lapply(X, FUN)`
+
+- `X`: a vector (atomic or list).
+- `FUN`: the function to be applied to each element of X.
+
+`lapply()`输出的结果是一个 list。
+```{r lapply}
+lapply(df, mean)
+lapply(c(1, 2, 3), \(x) x + 1)
+```
+
+2. `sapply(X, FUN)`
+
+`sapply()`输出的结果视情况而定，可以是一个 vector、matrix 或 list。
+```{r sapply}
+# vector
+sapply(df, mean)
+# matrix
+df_list <- lapply(1:3, \(x) data.frame(
+    x = sample(1:5, 10, replace = TRUE),
+    y = sample(1:5, 10, replace = TRUE, prob = c(0.5/5, 1/5, 2/5, 1/5, 0.5/5)), 
+    z = sample(1:5, 10, replace = TRUE, prob = c(1.5/5, 0.9/5, 0.2/5, 0.9/5, 1.5/5))
+  ))
+sapply(df_list, colMeans)
+# list
+sapply(3:9, seq)
+```
+
+
+## The basic usage of `lapply()` and `sapply()`
+
+1. 循环`element`
+
+```{r lapply_loop_data}
+set.seed(123)
+scores <- list(
+  class_1 = sample(100, 32, replace = TRUE),
+  class_2 = sample(100, 36, replace = TRUE),
+  class_3 = sample(100, 30, replace = TRUE)
+)
+lapply(scores, mean)
+```
+
+2. 循环`subscript`
+
+```{r lapply_loop_subscript}
+set.seed(123)
+scores <- list(
+  class_1 = sample(100, 32, replace = TRUE),
+  class_2 = sample(100, 36, replace = TRUE),
+  class_3 = sample(100, 30, replace = TRUE)
+)
+lapply(seq_along(scores), \(x) mean(scores[[x]]))
+```
+
+
+**`apply()`函数族中使用匿名函数的小技巧**
+
+在`lapply()`和`sapply()`的第二种基本用法的例子中，`scores`没虽然没有作为参数和`x`一并传入给 anonymous function，但运行并不会受影响。结合 define function 章节（详见\@ref(define-function)）的知识可以知道，这是因为在定义的 anonymous function 运行时自动创建的独立 environment 中没有`scores`， R 自动到上一层 environment 里面找，就自然找到了在`lapply()`外定义的`scores`。这也就是为什么`apply()`函数族中使用 anonymous function 时，虽然只能接受一个由`apply()`函数族传递进来的输入参数`x`，但也可以使用在 anonymous function 之前就已经存在的 object，从而完成较为复杂的任务。
+
+
+## Recap
+
+1. `apply()`函数族的核心思想是把 function 作为 argument；
+2. 比较简单的重复任务可以考虑使用`apply()`函数族代替`for`结构；
+3. 需要重复多次，但又不需要保存下供后续使用的操作，请使用 anonymous function。

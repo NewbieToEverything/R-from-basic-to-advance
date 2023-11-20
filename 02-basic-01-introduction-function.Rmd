@@ -1,0 +1,22 @@
+# Basic: function (brief introduction) {#intro-fun}
+
+在正式讲`R`之前，需要简单提及一下`R`中最常用的一种代码：函数（`function`）。尽管后续会有单独的章节讲`function`，但在此之前已经需要用到`function`来辅助讲解相比`function`更加基础的一些前置概念，所以需要先讲解`function`的基本用法。
+
+在`R`中，`function`是用来执行某个任务的一组语句，可以把`function`理解为一组动作，就好比日常生活中拧紧螺丝这个任务，通常可以分解为如下步骤：
+
+1. 查看螺丝确定位置和型号；
+2. 寻找匹配的起子；
+3. 顺时针拧，直到拧不动为止。
+
+把这些步骤组合为一个`function`，起个名字叫做`tighten_screw`（拧紧_螺丝），那么使用该`function`的代码可以是：
+```{r echo = TRUE, eval = FALSE}
+tighten_screw(position = c(0, 0), type = "cross")
+```
+表示提供给这个`function`两个必要的参数（`argument`），`argument`名分别是`position`，代表螺丝的位置，这个`argument`的值是一个 长度为 2 的向量（0，0）；另一个`argument`名为`type`，代表螺丝的型号，方便选起子，这个`argument`的值是"cross"（十字型）。有了这这两个信息，然后`tighten_screw()`自动执行第 2 步和第 3 步。
+
+所以，在`R`中，`function()`用法的基本格式就是`fun(arg = value)`，`函数名(参数名 = 参数值)`，其中`argument`可以有多个，多个`argument`之间要用英文的`,`分开。
+
+## Recap
+
+1. 在`R`中，只要看到英文小括号，就知道是使用了`function`，使用`function`时，`function`的名称之后必须紧跟`()`；
+2. 使用`function`时，如果有多个`argument`，必须使用英文逗号`,`隔开，最后一个`argument`后不需要`,`。

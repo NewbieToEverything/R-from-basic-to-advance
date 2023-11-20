@@ -1,0 +1,62 @@
+# Basic: naming rules and recommendations {#naming-rule-recommendation}
+
+## Rules
+
+在 R 中，name 的命名规则十分严格，只能由以下几类字符构成：
+
+1. 字母: `a-z`，`A-z`；
+2. 数字: `0-9`；
+3. `.`；
+4. `_`。
+
+除此之外，还有两个不允许：
+
+1. 不允许由`_`，或`0-9`，或`.0-9`开始；
+2. 不允许使用保留的单词，如`TRUE`，`NULL`，`if`和`function`，完整的保留的单词列表可以通过`?Reserved`或`help("Reserved")`查看。
+
+任何 name 违背了上述两条规则时，都属于非法 name，执行时 R 会报错（`error`）并中止当前执行的代码。
+
+非法 name 示例：
+
+```{r eval = FALSE}
+_abc <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected input in '_'")
+```
+
+```{r eval = FALSE}
+.11a <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected symbol in '1a'")
+```
+
+```{r eval = FALSE}
+if <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected assignment in 'if <-'")
+```
+
+不过，如果记不住上述两个不允许也不要紧，如果使用了非法的 name，RStudio 会有清晰的提示。
+
+**注意：R 中虽然可以使用中文作为 name，但并不建议这样做，可能会触发和解码有关的问题。**
+
+
+## Recommendations
+
+1. 始终用小写字母；
+2. 必要时可使用下划线`_`区分不同部分（`n_fruit`）；
+3. 变量名用名词（`n_fruit`），`function`名用动词（`order()`）；
+4. value 性质相同的变量，用相同的前缀（`n_fruit`，`n_classes`，`n_stu`，`n_teachers`）；
+
+
+## Recap
+
+1. name 不允许由`_`，或`0-9`，或`.0-9`开始；
+2. name 不可以是保留的单词，如`TRUE`，`NULL`，`if`和`function`，等等；
+3. name 里不建议使用中文。

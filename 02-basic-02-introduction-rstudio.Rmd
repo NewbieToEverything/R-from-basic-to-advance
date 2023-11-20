@@ -1,0 +1,231 @@
+# Basic: RStudio {#intro-RStudio}
+
+## Panes
+
+RStudio 的界面布局如下：
+
+<img style = "display: block; margin: auto" src="images/rstudio win.png" width="100%"/>
+
+这四个子窗口就是最常用的，下面分别介绍。
+
+
+### Source
+
+不管是新建 R 脚本（script），还是打开已经存在的 R script，都会出现在这个窗口。例如通过顶部 File 菜单下的 New File 按钮快速新建一个R script。
+
+<img style = "display: block; margin: auto" src="images/create R script.png" width="30%"/>
+
+然后就会在代码编辑窗口看见一个叫做 Untitled1 的新标签页，内容是空白的，可以在里面开始一行一行写代码了，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/create R script 1.png" width="100%"/>
+
+如果在 Untitled1 中写了任何的内容，Untitled1 几个字都会变红，并且右上角多了一个 *，提示你当前这个 R script 的内容已经发生了改变了，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/create R script 2.png" width="90%"/>
+
+注意，内容变化后要及时保存，点击保存的图标即可，或按下快捷键 Ctrl+S ，如下图所示，
+
+<img style = "display: block; margin: auto" src="images/create R script 3.png" width="100%"/>
+
+然后会弹出一个保存窗口，在红框处写上你想要保存的文件名，比如 test ，然后点击save即可，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/create R script 4.png" width="100%"/>
+
+此时你可以注意到，原本 Untitled1 就变成了 test.R ，说明保存成功，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/create R script 5.png" width="90%"/>
+
+注：.R 是 R script 的扩展名（也称后缀名）。
+
+请尽量使用 Ctrl+Enter 的方式运行代码，而不是用鼠标选中代码再点击<img style = "display: margin: auto" src="images/run current line or selection.png" width="10%"/>的方式运行。后者容易出现选漏的情况，导致运行选中的代码时出现不必要的错误。
+
+<video src="images/why ctrl enter.mp4" width="100%" controls="controls"></video>
+
+
+### Console
+
+在 R 中，Console 是用来执行代码并输出结果的地方，可以视作是一个交互式的命令行窗口。例如，在 Console 输入两行代码，分别是`a <- 1`（无输出结果）和`a`（输出`a`的`value`，即`1`），如下图所示：
+
+<img style = "display: block; margin: auto" src="images/console 1.png" width="100%"/>
+
+在 R 中，所有通过使用<img style = "display: margin: auto" src="images/run current line or selection.png" width="10%"/>手动执行的代码及其输出内容（如果有的话）都会出现在 Console 中，无一例外。
+
+**什么时候在 Console 里执行代码？**
+
+
+### Files Plots Packages Help Viewer
+
+这个窗口分 5 个标签页，最常用的是前 4 个，下面分别介绍。
+
+#### Files
+
+Files 标签页就是 RStudio 中的简版 Windows 资源管理器。如下图所示， RStudio 已经将常见的一些文件操作集成为按钮，如 New Folder，Delete，Rename等：
+
+<img style = "display: block; margin: auto" src="images/files panel.png" width="100%"/>
+
+其他一些不常见的操作就折叠在 More 中，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/files panel more.png" width="30%"/>
+
+如需切换至不同的盘符（如从 F 盘切换至 C 盘），则需点击下图所示红框中的按钮：
+
+<img style = "display: block; margin: auto" src="images/files panel switch to different disk.png" width="100%"/>
+
+然后在弹出的“Go to Folder”窗口中选择即可，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/files panel switch to different disk 1.png" width="100%"/>
+
+与 Windows 资源管理器中单击左键选中文件不同，在 RStudio 的 Files 标签页中是通过复选框来选中文件的，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/files panel selection.png" width="100%"/>
+
+在 RStudio 的 Files 标签页中单击文件等价于 Windows 资源管理器中双击左键，单击的结果是打开指定文件。
+
+#### Plots
+
+在 R 中，使用代码画出来的图都会以图片的方式呈现在 Plots 标签页中。Plots 标签页中也集成了一些基本的操作按钮，并且可以通过在图片上右键的方式呼出右键菜单来执行一些额外的简单操作。例如画一个散点图，在 Console 中输入`plot(x = 1:20, y = rnorm(20))`，Plots 标签页的内容如下：
+
+<img style = "display: block; margin: auto" src="images/Plots panel.png" width="100%"/>
+
+#### Packages
+
+Packages 标签页中最常用的场景是安装包，参考\@ref(package-install)部分。Packages 签页中会呈现出已经安装的所有包，其中复选框内打勾的表示该包已经被加载（如下图所示）。但通常加载包并不是通过鼠标勾选，而是使用`library()`，参考\@ref(package-library)部分。
+
+<img style = "display: block; margin: auto" src="images/packages panel.png" width = "100%"/>
+
+#### Help
+
+如果把`function`理解为是执行一套动作，那么可以将其类比于游戏中的一个技能。玩游戏时用技能前必须要看技能的说明文字，否则肯定用不对也用不好。
+
+同样，在用某个 function 前必须要看帮助文档，不然就容易用得不对，甚至是报错。正是因为此，Help 标签页恐怕是以上四个标签页中使用最为频繁的一个，也是自学 R 的高频使用场景，需要重点掌握。
+
+当执行了查看某 function 的帮助文档语句（`?c`），或查看某 package 作者提供的简明教程语句（vignette()`）时，帮助文档和简明教程都会呈现在 Help 标签页。
+
+以查看`c()`的帮助文档为例，执行`?c`后， RStudio 会自动将`c()`的帮助文档呈现在 Help 标签页，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/helper panel 1.png" width="100%"/>
+
+<img style = "display: block; margin: auto" src="images/helper panel 2.png" width="100%"/>
+
+在学习 function 时帮助文档中最有用内容是 Usage ，Arguments，Details，Value，Examples这几个部分。特别是 Examples，通常可以通过执行此部分的代码来实现快速理解该 function。
+
+此外，还有一个关键技巧，就是灵活使用 Find in Topic，实现快速查找帮助文档内的特定信息（本技巧的具体运用请参考“常规数据的读取和写入”小节中的“额外参数”部分的示例 2），如下图所示：
+
+<img style = "display: block; margin: auto" src="images/helper panel 3.png" width="100%"/>
+
+
+### Environment History Connections Gits Tutorial
+
+这个窗口有 5 个标签页，最常用的是第 1 个。
+
+#### Environment
+
+Environment是 R 中的一个重要概念，虽然代码中很少直接用到，但无时无刻不在发挥作用。Environment 有多种，目前只需要掌握 Global Environment 这一种即可。
+
+只要打开 RStudio ，就相当于打开了一个活动的 R session，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/R session.png" width="100%"/>
+
+每一个 R session 都有其独立的 Global Environment。可以把每一个 R session，想象成一个小人，对应的 Global Environment 就是该小人所拥有的房间。这个房间里所有的东西小人都可以操作，这些东西就相当于 R session 中所有通过`x <- value`产生的`object`，都存在了对应的 Global Environment 中。
+
+例如，执行`a <- 1`，产生了一个叫`a`的`object`，它的`value`是`1`，在 Global Environment 中显示如下：
+
+<img style = "display: block; margin: auto" src="images/Global Environment 1.png" width="50%"/>
+
+那么后续在代码中用到`a`时， R 就会在 Global Environment 里面寻找。例如在 Console 中执行`a + 1`， R 就在 Global Environment 里面找`a`，找到以后就拿出来做加法：
+
+<img style = "display: block; margin: auto" src="images/Global Environment 2.png" width="20%"/>
+
+相反，如果事先没有通过`a <- 1`的方式生成`a`，直接执行`a + 1`就会报错， R 会告诉你“不好意思，我找不到`a`，这事我干不了”：
+
+<img style = "display: block; margin: auto" src="images/Global Environment 3.png" width="100%"/>
+
+这就好比一个房间里的小人想要使用一个 Ta 的房间里面没有的东西，显然是不可以的。
+
+可以看出， RStudio 将一些与 Global Environment 有关的操作集成为按钮，其中使用频率较高的是扫帚图标，用来清空工作空间中的所有的`object`。在 RStudio 中，工作空间 work space 可以等价理解为 Global Environment。
+
+<img style = "display: block; margin: auto" src="images/Environment History Connections Gits Tutorial.png" width="100%"/>
+
+
+## Package: installation and `Library()`
+
+### Installation {#package-install}
+
+ R 的可扩展性就集中体现为包（package）。全球各地的 R 开发者将用来实现各种各样功能的 functions 封装成 package 然后发布出来，我们只需要下载和安装 package，就可以调用里面的 function 了。
+
+在 RStudio 中，可以非常方便地安装 package。安装 package 之前需要确定已经选择了一个国内的 CRAN 镜像，这样下载 package 的速度会快很多。
+
+镜像设定步骤如下：
+
+1. 顶部菜单栏 Tools -> Global Options
+
+<img style = "display: block; margin: auto" src="images/option globaloptions.png" width="40%"/>
+
+2. packages -> Change -> 在 CRAN mirrors 一栏中选以 China 开头的国内镜像 -> OK
+
+<img style = "display: block; margin: auto" src="images/choose mirror.png" width="90%"/>
+
+3. OK
+
+<img style = "display: block; margin: auto" src="images/option globaloptions 1.png" width="100%"/>
+
+安装 package 步骤如下，以安装 readxl 为例：
+
+1. 找到 package 板块 -> Install
+
+<img style = "display: block; margin: auto" src="images/install package 1.png" width="100%"/>
+
+2. 在 Packages 一栏中键入 readxl，在输入的过程中， RStudio 会从服务器端检索匹配输入内容的 package 列表，当输入到 readx 时，目标 package 就已经出现在列表中，选择即可。
+
+<img style = "display: block; margin: auto" src = "images/install package 2.png" width = "70%"/>
+
+3. 点击 Install。
+
+
+### `Library()` {#package-library}
+
+package 安装完毕以后，还需要加载才能使用其中的 function。还是以 readxl 包为例，加载包需要执行如下代码
+```{r eval = FALSE}
+library(readxl)
+```
+此行代码通常不会有任何输出，有的话一般就是加载的时候因为某个环节出问题导致加载失败所给出的错误提示。
+
+当前活动的 R session 中加载的所有 package 可以在 Environment 标签页中查看，如下图所示：
+
+<img style = "display: block; margin: auto" src="images/check packages libraried.png" width="100%"/>
+
+
+## Basic work flow
+
+写代码有一个基本的工作流程：执行写完的代码，看看写得对不对，执行的结果是不是符合预期，并根据执行的结果来调整原有的代码或继续写新的代码。这个过程中，就涉及到三个窗口的反复灵活运用：代码编辑窗口，控制台（Console ），环境（Environment）。下面通过一个视频简单演示：
+
+<video src="images/basic work flow.mp4" width="100%" controls="controls"></video>
+
+
+## Recommended RStudio shortcuts
+
+RStudio 有配置一些快捷键，一些日常编程使用频率高的、建议大家熟记的如下：
+
+|                   |                                       |
+|-------------------|---------------------------------------|
+| Ctrl+1            | Move focus to source                  |
+| Ctrl+2            | Move focus to console                 |
+| Ctrl+Shift+R      | Insert section                        |
+| Alt+Up/Down       | Move Lines Up/Down                    |
+| Shift+Alt+Up/Down | copy Lines Up/Down                    |
+| Ctrl+Left/Right   | Jump to Word                          |
+| Alt+Left/Right    | Jump to Start/End                     |
+| Ctrl+Alt+Up/Down  | Add Cursor Above/Below Current Cursor |
+| Ctrl+leftclick    | View object                           |
+
+如果查看更多的快捷键，使用 RStudio 的顶部菜单 Help，具体为：Help-\>Keyboard Shortcuts Help。
+
+
+## Recap
+
+1. 安装 package 之前请确保选择了以 China 开头的国内 CRAN 镜像，提升下载 package 的速度；
+2. 要使用已经安装的某个 package 中的 function，必须要先通过`library()`加载该 package；
+3. 写代码的基本工作流程中最常用的三个窗口分别是：代码编辑窗口， Console 和 Environment；
+4. 所有通过`x <- value`产生的`object`都会储存在 Global Environment 里面；
+5. 查看 Help 文档请使用`?`，后紧跟要查看的 function 名字，例如`?mean`；
+6. 如果要在当前打开的 Help 文档中搜索内容，请使用 Find in Topic。

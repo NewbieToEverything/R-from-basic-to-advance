@@ -1,0 +1,615 @@
+# Basic: subsetting {#subsetting}
+
+subsetting 是把想要的部分取出来，方便后续操作。在 R 中，subsetting 就是取指定 object 的一部分 elements 出来。Subsetting 恐怕是 R 中最常用的操作之一了，需要大家熟练掌握。
+
+
+## Element
+
+在 R 中，一般会把 object 中存储的信息视作是数据，通常会将 element 视作是数据中的最小单位，但这个理解在不同的 structure types 中有所不同。
+
+vector, matrix, array, factor 类型的 object 中 element 指的是 object 内容上的单个记录。例如：
+```{r}
+m1
+```
+
+list 和 data.frame 这两种类型的 object，element 指结构上的单个记录。例如：
+
+- list
+
+<img style = "display: block; margin: auto;" src="images/element list.png" width="60%"/>
+
+- `data.frame`
+
+<img style = "display: block; margin: auto;" src="images/element data.frame.png" width="60%"/>
+
+
+## Subsetting operators
+
+subsetting 在 R 中被视作是一种操作（operation），所以是通过操作符（operator）来实现。用于 subsetting 的 operators 共有 4 种，可分为 2 种类型。
+
+| 取单个元素         | 取多个元素  |
+|--------------------|-------------|
+| `[[]]`，`$`，`@`   |  `[]`       | 
+
+其中，`$`和`@`但只能作用于 list 和 data.frame 这两种 structure type，可以视作是与`[[]]`等价的一种特殊写法。`$`和`@`的作用方式相同，只是针对不同的 object 系统，`$`适用于 S3，`@`适用于 S4。关于`object`系统的知识涉及到面向对象编程（Object-oriented programming），超出了本课程的讲解范围，在此不作展开。
+
+Subsetting 的两种索引（index）分别是**位置**和**名字**（name），其中位置是绝对会有的，而 name 则不一定，这也是符合常识的。例如军训队伍方阵，教官第一次训练时，是不知道每个同学叫什么名字的，但是绝对可以通过该同学在方阵中所处的位置（第几行第几列）让该同学出列。同样的，在 R 中，要取出一个 object 的一部分，此时该 object 肯定是已经存在于 global environment 中，它有几个元素，分别是什么都是确定的，元素的位置信息就一定会有，但name 则不一定（data.frame 是一个例外）。所以取子集时，位置是最为常用的 index。
+
+注意：取多个 elements 时，通常会保留所取 elements 中与 name 相关的 attribute，有些情况下会保留 dim，其他的 attribute 一般都会被丢弃。这一点在本节后续使用的例子中可以得到体现。
+
+
+## Basic usage of subsetting operators
+
+### Subset single element
+
+- `[[]]`
+
+**无维度**
+
+用来取出 object 中的指定单个 element。例如：
+
+```{r subset_single_element_atomic_vec, error = TRUE}
+# atomic vector
+vec_dbl <- c(0, 1, 2.5, 4.5)
+vec_dbl[[1]]
+vec_dbl[[2]]
+vec_dbl[[3]]
+vec_dbl[[4]]
+vec_dbl[[5]]
+```
+
+上述写法也同样适用于 factor 和 expression。
+
+**有维度**
+
+```{r subsetting_single_element_matrix}
+# matrix
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1
+m1[[1]]
+m1[[2]]
+m1[[3]]
+m1[[4]]
+# 等价于
+m1[[1, 1]]
+m1[[2, 1]]
+m1[[1, 2]]
+m1[[2, 2]]
+```
+
+注：`[[2, 2]]`这种有`,`的写法表示 subsetting 时考虑了维度的信息，一个`,`表示有两个维度，两个`,`表示有三个维度，依此类推。这种写法**只能用于**有 dim 这个 attribute 的 object，也就是 **array** 和 **matrix**，以及特例—— data.frame：
+
+```{r subsetting_single_element_array}
+# array
+a1 <- array(1:6, dim = c(1, 2, 3))
+a1
+a1[[1]]
+a1[[2]]
+a1[[3]]
+a1[[4]]
+a1[[5]]
+a1[[6]]
+# 等价于
+a1[[1, 1, 1]]
+a1[[1, 2, 1]]
+a1[[1, 1, 2]]
+a1[[1, 2, 2]]
+a1[[1, 1, 3]]
+a1[[1, 2, 3]]
+# data.frame
+df <- data.frame(x = c(1, 2), y = c(3, 4))
+df
+attributes(df)
+df[[1, 2]]
+```
+
+```{r subsetting_single_element_list}
+# list
+l1 <- list(
+  list(1, 2, 3),
+  c(1L, 2L, 3L), 
+  "a", 
+  c(TRUE, FALSE, TRUE), 
+  c(2.3),
+  c(NA, NA, NA), 
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+str(l1)
+l1[[1]]
+l1[[2]]
+l1[[3]]
+l1[[4]]
+l1[[5]]
+l1[[6]]
+l1[[7]]  # 该元素本身是 matrix，有 dim attribute，所以得到保留
+is.matrix(l1[[7]])
+# 取 list object 的单个元素中的单个 element
+l1[[2]][[2]]
+l1[[7]][[4]]
+# 等价于
+l1[[7]][[2, 2]]
+```
+
+```{r subsetting_single_element_dataframe}
+# data.frame
+gender <- factor(c("male", "male", "female", "male", "female", "female"))
+school <- factor(c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"))
+age <- c(18, 20, 19, 19, 21, 20)
+df <- data.frame(gender, school, age)
+df
+df[[1]]
+df[[2]]
+df[[3]]
+# 取 data.frame object 的单个元素中的单个 element
+df[[3]][[5]]
+# 等价的写法应该是什么？
+```
+
+
+- `$`和`@`
+
+只能作用于有`names`这一 attribute 的 list 和 data.frame ，用来取出对应某名字下的单个 element。例如，
+
+```{r pick_element_usingname}
+l1 <- list(
+  t = list(1, 2, 3),
+  u = c(1L, 2L, 3L), 
+  v = "a", 
+  w = c(TRUE, FALSE, TRUE), 
+  x = c(2.3),
+  y = c(NA, NA, NA), 
+  z = matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+df1 <- data.frame(number = c(1, 2, 3), letter = c("a", "b", "c"))
+str(l1)
+df1
+# subsetting using $
+l1$t
+df1$letter
+# 等价于
+l1[[1]]
+df1[[2]]
+```
+
+如果名字是中文，可能会出现编码的问题，导致报错，不建议使用。如果碰到中文名字的情况，需要加`""`，例如：
+```{r pick_single_element_usingname_chinese}
+df1 <- data.frame(number = c(1, 2, 3), letter = c("a", "b", "c"))
+names(df1) <- c("数字", "字母")
+df1
+df1$"数字"
+```
+
+如果将`$`用于除 list 和 data.frame 以外的 structure types，都会报错，例如
+```{r pick_element_usingname_atomic_vec, error = TRUE}
+a <- c(x = 1, y = 2)
+a
+a$x
+```
+
+除了 list 和 data.frame 之外，其他的 structure types 能用 name 为 index 取单个 element 吗？
+```{r pick_element_usingname_ato_vec_right}
+# atomic vector
+a <- c(x = 1, y = 2)
+a[[2]]
+a[["y"]]
+# matrix
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+dimnames(m1) <- list(c("c", "d"), c("a", "b"))
+m1
+m1[[4]]
+m1[[2, 2]]
+m1[[2, "b"]]
+m1[["d", 2]]
+m1[["d", "b"]]
+# array
+a1 <- array(c(1, 2, 3, 4, 5, 6), dim = c(1, 2, 3))
+dimnames(a1) <- list(NULL, c("a", "b"), c("c1", "c2", "c3"))
+a1
+a1[[6]]
+a1[[1, 2, 3]]
+a1[[1, 2, "c3"]]
+a1[[1, "b", 3]]
+a1[[1, "b", "c3"]]
+```
+
+如果使用`$`时，用错了名字会怎么样？
+```{r pick_multiple_element_usingname_spellwrong_dataframe, error = TRUE}
+df1 <- data.frame(number = c(1, 2, 3), letter = c("a", "b", "c"))
+df1
+df1$numbar
+cbind(df1, df1$numbar)
+```
+
+上述错误就出现在部分同学的实训 3-1 中
+```{r exercise_6_1_example, error = TRUE}
+# 实训 6.1 第 2 题
+scores <- read.fwf(file = "F:/Nutstore backup/R/codes/RBA/data/6.1 final data.txt", 
+                   skip = 5, width = c(3, 14, 5, 9, 9, 10, 11),
+                   col.names = c("name", "date_of_birth", "class", 
+                                 "score_last", "score_current", 
+                                 "rank_last", "rank_current"), 
+                   fileEncoding = "UTF-8")
+head(scores)
+rank_change <- scores$rank_currant - scores$rank_last
+scores <- cbind(scores, rank_change)
+```
+
+其他 structure types 下使用 name 来取单个 element 时，如果 name 拼错会怎么样？
+```{r pick_multiple_element_usingname_spellwrong_vector, error = TRUE}
+# atomic vector
+a <- c(x = 1, y = 2)
+a[["z"]]
+```
+
+
+### Subset multiple elements
+
+`[]`表示用来取多个 elements（包括单个）。
+
+当取单个 element 时，绝大多数情况下，`[]`和`[[]]`效果一致。例如：
+```{r square_double_square_single}
+# atomic vector
+a <- c(1, 2, 3)
+a[3]
+a[[3]]
+# matrix
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1
+m1[4]
+m1[[4]]
+m1[2, 2]
+m1[[2, 2]]
+# array
+a1 <- array(c(1, 2, 3, 4, 5, 6), dim = c(1, 2, 3))
+a1
+a1[6]
+a1[[6]]
+a1[1, 2, 3]
+a1[[1, 2, 3]]
+```
+
+只有在 list 和 data.frame 的情况下，取单个 element 用`[]`和`[[]]`的结果有所不同，不同的根本原因是：如果是 list（data.frame 本质上是 list），那么`[]`返回的结果永远是一个 list。例如
+```{r pick_single_element_list}
+l1 <- list(
+  t = list(1, 2, 3),
+  u = c(1L, 2L, 3L), 
+  v = "a", 
+  w = c(TRUE, FALSE, TRUE), 
+  x = c(2.3),
+  y = c(NA, NA, NA), 
+  z = matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+str(l1)
+l1[[7]]
+is.matrix(l1[[7]])
+l1[7]  # 名字得以保留
+is.matrix(l1[7])
+is.list(l1[7])
+```
+
+这里借用[Advanced R](https://adv-r.hadley.nz/)（Hadley Wickham）中的比喻和图例来形象地解释这一现象的原因。比喻的原作者：
+
+> If list x is a train carrying objects, then x[[5]] is the object in car 5; x[4:6] is a train of cars 4-6.
+
+> RLangTip, https://twitter.com/RLangTip/status/268375867468681216
+
+假定一个 list 是一个火车，每一个 element 就是一节车厢，车厢里可以是各种各样 structure type 的 object。那么，`[[]]`取出来的就是某节车厢里的 object，`[]`取出来的就是火车+指定车厢+指定车厢里面的 object。
+
+例如：
+
+```{r echo = TRUE, eval = TRUE}
+x <- list(1:3, "a", 4:6)
+```
+
+就好比
+
+<img style = "display: block; margin: auto;" src="images/subsetting train.png" width="50%"/>
+
+当从`x`中取单个 element 时，`[]`表示创建一个小型的火车拉着某个车厢，`[[]]`表示把某个车厢里的东西取出来。
+
+<img style = "display: block; margin: auto;" src="images/subsetting train-single.png" width="50%"/>
+
+由于 data.frame 本质上是 list，所以也会出现上述现象：
+```{r pick_single_element_by_single_square}
+df <- data.frame(x = 1:3, y = 4:6)
+df[1]
+df[[1]]
+is.data.frame(df[1])
+is.atomic(df[1])
+is.data.frame(df[[1]])
+is.atomic(df[[1]])
+```
+
+忽略上述细节会导致在写代码的时候，如果使用`[]`取 list 和 data.frame 的单个 element，后续基于该取出的单个 element 的操作很容易出错。
+```{r pick_single_elemnt_by_single_square, error = TRUE}
+results_ttest <- t.test(1:20, 20:30)
+str(results_ttest)
+# wrong approach, subsetting a single element of a list object using []
+results_ttest[4][1]
+results_ttest[4][2]
+# correct approach, subsetting a single element of a list object using [[]]
+results_ttest[[4]][1]
+results_ttest[[4]][2]
+# correct approach, subsetting a single element of a list object using $
+results_ttest$conf.int[1]
+results_ttest$conf.int[2]
+```
+
+
+当使用`[]`同时取出多个 elements 时，就有很多几种不同的基本用法，并且可以根据需要灵活组合使用。这些基本用法可以分为两类：**以位置为 index**和**以名字为 index**。其中，位置为 index 时`[]`的使用最为灵活，有四种具体的用法：
+
+a. positive integer（取出指定位置的 element）
+b. negative integer（排除指定位置的 element）
+c. logical（取出指定位置的 element）
+d. 空白（取出所有 elements）
+
+
+#### Position 
+
+a. positive integer（取出指定位置的 element）
+
+**不考虑维度**
+```{r pick_multiple_element_positive_matrix}
+m1 <- matrix(c(5, 6, 7, 8), 2, 2)
+m1
+m1[c(4, 3, 2, 1)]
+m1[c(1, 3)]
+is.matrix(m1[c(1, 3)])
+```
+
+可以看出，`m1[c(4, 3, 2, 1)]`取出来的子集中 elements 的顺序和提供的 positive integers 完全一致，相当于取出子集的同时，也对子集的位置顺序做了调整。这意味着可以按照任务需求随意排列子集。这一理解在“取子集操作符的进阶用法”小节的讲解中会得到运用。
+
+```{r pick_multiple_element_positive_dataframe}
+df <- data.frame(number = c(1, 2, 3, 4), letter = c("a", "b", "c", "d"), direction = c("north", "east", "south", "west"))
+df
+df[c(1, 2, 3)]
+df[c(1, 3)]
+is.data.frame(df[c(1, 3)])
+```
+
+**考虑维度**
+
+相当于对原始的 object 切块。
+```{r pick_multiple_element_positive_matrix_bydim}
+m1 <- matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9), 3, 3)
+m1
+m1[c(1, 3), c(2, 3)]
+is.matrix(m1[c(1, 3), c(2, 3)])
+```
+
+<img style = "display: block; margin: auto;" src="images/element matrix slice.png" width="20%"/>
+
+```{r pick_multiple_element_positive_dataframx_bydim}
+df <- data.frame(number = c(1, 2, 3, 4), letter = c("a", "b", "c", "d"), direction = c("north", "east", "south", "west"))
+df
+df[c(2, 3), c(1, 3)]
+is.data.frame(df[c(2, 3), c(1, 3)])
+```
+
+重复的 positive integers：提取相同的内容然后拼接：
+```{r pick_multiple_element_positive_dataframx_bydim_repeated}
+df <- data.frame(number = c(1, 2, 3, 4), letter = c("a", "b", "c", "d"), direction = c("north", "east", "south", "west"))
+df
+df[c(2, 2), c(1, 3)]
+```
+
+和位置序号一致但顺序不同的 positive integers，可以用来重新排列原始数据：
+```{r pick_multiple_element_positive_dataframx_bydim_reorder}
+df <- data.frame(number = c(1, 2, 3, 4), letter = c("a", "b", "c", "d"), direction = c("north", "east", "south", "west"))
+df
+df[, c(3, 1, 2)]
+```
+
+b. negative integer（排除指定位置的 element）
+
+**不考虑维度**
+```{r pick_multiple_element_negative_matrix}
+m1 <- matrix(c(5, 6, 7,8), 2, 2)
+m1
+m1[-4]
+m1[c(-1, -3)]
+```
+
+**考虑维度**
+```{r pick_multiple_element_negative_matrix_bydim}
+m1 <- matrix(1:16, 4, 4)
+m1
+m1[c(-1, -4), c(-2, -3)]
+```
+
+和 positive integer 一样，negative integer 也支持一个数字重复多次的用法，相当于多次排除相同的指定 element，但无意义。
+```{r pick_multiple_element_negative_matrix_bydim_repeated}
+m1 <- matrix(1:16, 4, 4)
+m1
+m1[c(-1, -1), c(-2, -2)]
+```
+
+此外，negative integer 不可以和 positive integer 一起混用。
+```{r pick_multiple_element_negative_matrix_mixed_with_positive, error = TRUE}
+m1 <- matrix(1:16, 4, 4)
+m1
+m1[c(1, -4), c(2, -3)]
+```
+
+c. logical（取出指定位置的 element）
+
+**不考虑维度**
+
+使用一个和 object 相同长度的 logical vector，`TRUE`表示将 object 该位置上的 element 取出来，`FALSE`则相反。
+```{r pick_multiple_element_logical_matrix}
+m1 <- matrix(c(5, 6, 7,8), 2, 2)
+m1
+m1[c(TRUE, FALSE, TRUE, FALSE)]
+```
+
+和 integer 的情况不同，如果`object[]`中 logical vector 的长度比 object 短，就会触发 recycling rule,（详见\@ref(byrow-recycling)），导致取出预期之外的 element，这一点需要特别注意，容易导致代码出错：
+
+```{r pick_multiple_element_logical_matrix_recycle}
+m1 <- matrix(c(5, 6, 7,8), 2, 2)
+m1
+m1[TRUE]  # 等价于 m1[c(TRUE, TRUE, TRUE, TRUE)]
+```
+
+**考虑维度**
+```{r pick_multiple_element_logical_matrix_bydim}
+m1 <- matrix(1:16, 4, 4)
+m1
+m1[c(TRUE, FALSE, TRUE, FALSE), c(FALSE, TRUE, TRUE, FALSE)]  # 等价于 m1[c(1, 3), c(2, 2)]
+```
+
+d. 空白（取出所有 elements）
+
+**不考虑维度**
+```{r pick_multiple_element_blank_matrix}
+m1 <- matrix(1:16, 4, 4)
+m1
+m1[]
+```
+
+**考虑维度**（取出指定维度下的所有 elements）
+```{r pick_multiple_element_blank_matrix_bydim}
+m1 <- matrix(1:16, 4, 4)
+m1
+m1[c(1, 2), ]
+```
+
+
+#### Few caveats
+
+a. 取子集时和 name 有关的 attribute 会保留。
+
+```{r pick_multiple_element_blank_matrix_names_bydim}
+m1 <- matrix(1:16, 4, 4)
+rownames(m1) <- 1:4
+colnames(m1) <- 1:4
+m1
+m1[c(4, 3, 2, 1), ]
+```
+
+b. data.frame 由于其 element 是列，所以按行 subsetting 出来是 data.frame，可能会导致无法进行部分数值运算，如`mean()`：
+```{r dataframe_subsetting_rowwise, warning = TRUE}
+df <- data.frame(score_last = c(99, 100, 87), score_current = c(96, 98, 77))
+mean(df[2, ])
+is.numeric(df)  # is.numeric returns TRUE if its argument is of mode "numeric" (type "double" or type "integer") and not a factor, and FALSE otherwise. 
+typeof(df)
+is.numeric(df[1, ])
+```
+
+#### Name
+
+**无维度**：vector
+```{r pick_multiple_element_byname_vector}
+v1 <- c(1, 2, 3, 4)
+names(v1) <- c("v1", "v2", "v3", "v4")
+v1
+v1[c("v1", "v3", "v4")]
+```
+
+**有维度**：matrix
+```{r pick_multiple_element_byname_matrix}
+m1 <- matrix(1:16, 4, 4)
+dimnames(m1) <- list(c("r1", "r2", "r3", "r4"), c("c1", "c2", "c3", "c4"))
+m1
+m1[c("r1", "r4"), c("c2", "c3")]
+```
+
+重复某一个名字，和重复 positive integer 是一样的效果，提取相同的内容然后拼接，就不展示例子了。
+
+取多个 elements 时，以上 4 种 index 可以根据需要任意组合使用，例如：
+```{r element_complex_application}
+m1 <- matrix(1:16, 4, 4)
+dimnames(m1) <- list(c("r1", "r2", "r3", "r4"), c("c1", "c2", "c3", "c4"))
+m1
+m1[c(TRUE, TRUE, FALSE, FALSE), ]
+m1[c(-1, -3), c("c2", "c4")]
+```
+
+
+### Recap
+
+1. list 和 data.frame 中 element 指结构上的单个记录，其他 structure types 中 element 指内容上的单个记录；
+2. 取多个 elements 时，和 name （如行名、列名、维度名等）有关的 attribute 会保留；
+3. Subsetting operators 的总结如下图所示：
+<img style = "display: block; margin: auto;" src="images/subsetting all.jpg" width="100%"/>
+
+4. list 和 data.frame 取单个元素时，`[[]]`和`$`或`@`的结果一致，但`[[]]`和`[]`的结果不一致；
+5. 使用 logical vector 来取多个元素时，一定要注意：
+  - 不考虑维度，logical vector 的长度要和 object 一致；
+  - 考虑维度，logical vector 的长度要和对应维度的数量（如行数、列数）一致。
+
+
+## Advanced usage of subsetting operators
+
+Subsetting 的基本用法很好掌握，但如果只会写基本用法，代码就会很冗长，不够简洁。例如需要把矩阵中所有大于 1 的数找出来：
+```{r subsetting_basic_demo}
+m1 <- matrix(runif(25), 5, 5)
+m1
+is_larger_than_3 <- m1 > 0.3
+m1_larger_than_3 <- m1[is_larger_than_3]
+m1_larger_than_3
+```
+
+熟悉了基本用法后，可以使用进阶写法，即将多个操作写在同一行的方式简化代码
+
+```{r subsetting_advance_demo}
+m1 <- matrix(runif(25), 5, 5)
+m1
+m1_larger_than_3 <- m1[m1 > 0.3]
+m1_larger_than_3
+```
+
+### Basic formula
+
+进阶用法主要体现在灵活运用`[]`上。`[]`的使用语法为`object[index]`，即`对象[索引]`，容易看出，这个结构里面可以改动的部分实际上就只有`object`和`index`，进阶用法的基本思路就体现在如何改动这两个部分上。
+
+1. `object[index]`中的`object`
+
+基本用法：
+
+```{r eval = FALSE}
+a <- c(5, 6, 7)
+a[c(2, 3)]
+```
+
+进阶用法：`object`可以是语句，代表一步或多步操作，执行结果是一个 anonymous object：
+```{r subsetting_advanced_object}
+df <- data.frame(number = c(1, 2, 3, 4), 
+                 letter = c("a", "b", "c", "d"), 
+                 direction = c("north", "east", "south", "west"))
+df
+names(df)[c(2, 3)]
+df[c(2, 3), ][-1]
+```
+
+2. `object[index]`中的`index`（重点）
+
+基本用法：positive integer，negative integer，logical vector，空白，character
+
+进阶用法：通过代码生成符合要求的 index，主要是 positive integer 和 logical vector。
+
+例如，将下面的数据中所有非缺失值取出来：
+```{r subsetting_advanced_index}
+m1 <- matrix(c(NA, 2, 3, 4,
+               5, NA, 7, 8,
+               9, 10, NA, 12,
+               13, 14, 15, NA), 4, 4)
+m1
+is.na(m1)
+!is.na(m1)
+m1[!is.na(m1)]
+matrix(m1[!is.na(m1)], 3, 4)
+```
+
+这种写法的本质，是通过使用一些 function 操作来产生目标 index，然后再使用这些 index 完成 subsetting。上述例子中需要完成的操作：
+
+1. 判断每一个 element 是不是缺失值（`is.na()`），
+2. 然后把不是缺失值的 element 找出来`!`，并生成最终的 logical vector，其中，`TRUE`代表非缺失，`FALSE`代表缺失，
+3. 最后使用该 logical vector 作为 index ，结合`[]`取出符合条件的所有 elements。
+
+将所有这些步骤糅合到一起写，实现了 1 行代码搞定相对复杂的任务。
+
+一旦熟悉了这种写法，只要掌握一些常用操作所对应的 function，多加练习就可以灵活运用，写出非常简洁高效的代码。
+
+
+### Recap
+
+1. Subsetting operators 的进阶用法主要体现在`[]`；
+2. `object[index]`中的`object`可以是未命名的语句执行结果；
+3. `object[index]`中符合条件的`index`（主要是 posititve integer 和 logical vector）可以通过代码生成。

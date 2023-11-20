@@ -1,0 +1,68 @@
+--- 
+title: "R语言：从基础到进阶"
+author: "李喻骏"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [book.bib, packages.bib]
+description: "帮助零基础使用者掌握R语言的核心知识点，有效提高基于R语言的编程能力，形成扎实的R代码能力，并运用于解决领域特定的问题中去。"
+github-repo: "NewbieToEverything/R-from-basic-to-advance"
+cover-image: ""
+biblio-style: apalike
+csl: chicago-fullnote-bibliography.csl
+---
+
+
+# Welcome{-}
+
+本书是同名课程的自编教材，还在持续更新当中，目前没有计划的公开出版日期，欢迎使用。
+
+
+## About this class{-}
+
+本课程是面向没有 R 语言编程基础的相关人员开设的，其目标是帮助学习者掌握运用 R 语言解决实际问题的能力。 R 语言作为以统计分析功能见长的一门编程语言，常常会让使用者感到比较吃力。这种吃力的原因，大体上可以分为三种：统计功底不佳， R 编程功底不佳，两者均不佳。三种情况都容易导致在实际运用过程中出现代码看不懂的情况，表现为不知道代码什么意思，不知道为什么代码会出现这样的结果，不知道这样的结果如何解读，等等。
+
+本课程希望能够从 R 语言这一侧，通过给学习者提供一套学习 R 语言的清晰路径，帮助不同领域的学习者打下比较好的 R 语言基本功，能看懂代码并掌握动手能力。在此基础上只要熟悉自己领域常用的统计方法便可以顺利使用 R 自主地解决各种各样的实际问题。即便是需要学习新的统计方法，只要有对应的 R 包，便可以利用所学的 R 基本功很快上手。
+
+在这个思路的指导下，本课程的主要目标设定如下：
+
+1. 掌握 R 语言的基本要素和语法结构；
+2. 能够灵活运用 R 来完成数据分析的任务，包括但不限于：
+  - 导入数据
+  - 清洗数据
+  - 分析数据：统计建模，数据可视化
+  - 撰写报告
+3. 学会自动化撰写数据分析报告。
+
+终极目标是培养大家使用 R 语言来解决问题的能力。
+
+
+## Author{-}
+
+李喻骏，江西师范大学心理学院，讲师。
+
+联系方式：
+
+- QQ: 3430198622
+- Email: liyujun@jxnu.edu.cn
+
+## Reference{-}
+
+入门：
+
+1. 《R语言实战》
+2. 《R语言入门与实践》
+3. [R for Data Science 2nd edition](https://r4ds.hadley.nz/)
+
+进阶：
+
+1. [Advanced R 2nd edition](https://adv-r.hadley.nz/)
+2. [ggplot2: elegant graphics for data analysis](https://ggplot2-book.org/)
+3. [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)
+4. [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/)
+
+## License{-}
+
+本教材作为一个整体采用的开源协议为 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+教材中的所有代码采用[MIT license](https://opensource.org/licenses/MIT).

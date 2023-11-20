@@ -1,0 +1,552 @@
+# Basic: structure type {#structure-type}
+
+```{r setup, include = FALSE}
+library(ggplot2, quietly = TRUE)
+```
+
+数据分析任务中处理的数据通常都是以某种结构的形式呈现的，例如矩阵，所有的元素都是储存在这样一种结构里，那么将这个数据读进 R 时，就自然会保持原有的结构。除了实际数据中常见的**行+列**的矩阵式结构， R 还有其它几种常用的结构，即不同的**结构类型**（structure type）。
+
+**structure type**之所以重要是因为不同的**structure type**在结构上有其各自的特点，在操作的时候需要注意，否则就容易出错。
+
+structure type 可以分为两类，向量（vector）和其他类型，其中 vector 最为基础。
+
+
+## Vector
+
+vector 是 R 中最重要、也是最基础的一种 structure type，除此之外其他的 structure type 可以视作是有更多属性（attribute）的 vector。有关 vector 的详细信息可以使用`?vector`查看。
+
+vector 有 3 种：atomic（原子型），list（列表），expression（表达式）。
+
+
+### Atomic vector
+
+Atomic vector 中的**所有 element 必须是同一种 element type**（不可以是 expression）。
+
+```{r atomic_example}
+var_lgl <- c(TRUE, FALSE)
+var_int <- c(1L, 6L, 10L)
+var_dbl <- c(1, 2.5, 4.5)
+var_chr <- c("these are", "some strings")
+var_na <- c(NA, 1, 2)
+var_null <- c(NULL, 1, 2)
+var_exp <- expression(1 + 2)
+is.vector(var_lgl)
+is.vector(var_int)
+is.vector(var_dbl)
+is.vector(var_chr)
+is.vector(var_na)
+is.vector(var_null)
+is.vector(var_exp)
+```
+
+```{r atomic_no_expression}
+is.atomic(var_lgl)
+is.atomic(var_int)
+is.atomic(var_dbl)
+is.atomic(var_chr)
+is.atomic(var_na)
+is.atomic(var_null)
+is.atomic(var_exp)
+```
+
+检测某个对象是否是 vector 或某个 vector 是否是 atomic 可以使用`is.vector()`和`is.atomic()`，但因为这两个`function`返回的结果指向性并不明确，往往需要进一步查验到底是哪一种元素类型。如果返回`TRUE`，其实并不知道具体是哪一种 element type 的 vector。更建议直接使用`typeof()`
+
+```{r test_vector}
+typeof(var_lgl)
+typeof(var_int)
+typeof(var_dbl)
+typeof(var_chr)
+typeof(var_na)
+typeof(var_null)
+typeof(var_exp)
+```
+
+
+#### Create atomic vector
+
+**用`vector()`生成指定长度的 vector**
+
+在一些情况下，需要提前生成一个指定长度的 vector，相当于初始化。此时它的值并不重要，因为会随着代码的运行不断更新。这个时候，就要用`vector()`。
+
+```{r vector_gen}
+mean_all_class <- vector(mode = "double", length = 20)
+mean_all_class
+```
+
+
+### List
+
+List 虽然本质上是一种 vector，但相较于 atomic vector 从形式上差异很大，所以通常会把 list 当作是一种独立的 structure type，在\@ref(other-structure-type)这一小节中会有专门论述。
+
+
+### Expression (optional)
+
+在\@ref(element-type)一章中讲到可以使用`expression()`创建 expression 的object，如果提供给`expression()`的 argument 有多个，那么产生出来的就是一个 expression vector，例如：
+
+```{r expression_vector}
+var_exp <- expression(1 + 2, a, (y == sqrt(x)))
+var_exp
+length(var_exp)
+```
+
+
+## Other type {#other-structure-type}
+
+除了 vector之外， R 还有很多 structure types，如 matrix，array，factor，list，data.frame，这些 structure type 都可以近似理解为在 atomic vector 的基础上添加 **属性（attribute）** 。
+
+
+### Attribute
+
+在 R 中，object 通常会有属性（attribute）。attribute 储存的是用来诠释 object 的一些元信息，通过`attributes()`查看。
+
+对于 atomic vector，有且只能有一个 attribute，就是`names`。如果没有指定，则为`NULL`。例如：
+
+```{r atomic_vec_noname}
+scores <- c(90, 100, 98)
+scores
+attributes(scores)
+```
+
+使用`names()`给`scores`添加`names`的 attribute`，
+```{r atomic_vec_name}
+scores <- c(90, 100, 98)
+scores
+names(scores) <- c("test1", "test2", "test3")
+scores
+attributes(scores)
+```
+
+`names()`除了可以给 object 赋予`names`的 attribute，还可以用来提取 object 的`names`，例如：
+
+```{r atomic_vec_getname}
+scores <- c(90, 100, 98)
+attributes(scores)
+scores <- c(90, 100, 98)
+names(scores) <- c("test1", "test2", "test3")
+names(scores)
+```
+
+可以用`NULL`清空`names`，例如：
+```{r remove_names_NULL}
+scores <- c(90, 100, 98)
+names(scores) <- c("test1", "test2", "test3")
+scores
+names(scores) <- NULL
+```
+
+如果希望通过`c()`生成 atomic vector 时就直接被赋予`names`，代码示例如下：
+```{r atomic_vec_c_name}
+scores <- c(test1 = 90, test2 = 100, test3 = 98)
+attributes(scores)
+```
+
+注意，和 atomic vector 一样，expression vector 也可以有`names`属性，例如
+
+```{r expression_vector_name}
+var_exp <- expression(exp1 = 1 + 2, exp2 = a, exp3 = (y == sqrt(x)))
+var_exp
+attributes(var_exp)
+```
+
+所有的 structure type，基本上都可以有与 name 相关的 attribute ，姑且称之为通用 attribute。除此之外，还有一些特殊 attribute。接下来介绍其他 structure type 时，均会按照先介绍该 structure type 的特殊 attribute，再介绍通用 attribute 的顺序行文。
+
+
+### Matrix and array
+
+可以通过添加`dim`（dimension，维度）的 attribute，将 atomic vector 转换为 matrix（2 维）和 array（2 维及以上），用到的 function 为`dim()`。
+
+
+#### Special attribute: dim
+
+- matrix
+
+```{r matrix_example}
+a <- c(1, 2, 3, 4)
+is.vector(a)
+dim(a)
+dim(a) <- c(2, 2)
+a
+attributes(a)
+is.vector(a)
+is.matrix(a)
+```
+
+R 中， dimension 始终都是先从行开始。
+```{r dimension_start_from_row}
+a <- c(1, 2, 3, 4)
+is.vector(a)
+dim(a) <- c(1, 4)
+a
+```
+
+- array
+
+```{r array_example}
+a <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+is.vector(a)
+dim(a)
+dim(a) <- c(2, 2, 3)
+a
+attributes(a)
+is.vector(a)
+is.array(a)
+print("when add the dimension attribute, the number of rows always come first")
+dim(a) <- c(1, 4, 3)
+a
+```
+
+当然，通常产生 matrix 和 array 并不需要通过上述较为麻烦的方式，而是直接使用对应的 function 一步生成，例如：
+
+- matrix
+
+```{r matrix_gen}
+a <- matrix(data = c(1, 2, 3, 4), nrow = 2, ncol = 2)
+a
+```
+
+- array
+
+```{r array_gen}
+a <- array(data = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), dim = c(2, 2, 3))
+a
+```
+
+直接使用`matrix()`和`array()`来生成`structure`为`matrix`类型和`array`类型的`object`时，与`dimension`有关系的`argument`请务必写完整。
+```{r always_state_dimension_explicitly}
+matrix(c(1, 2, 3 ,4), nrow = 4)
+array(data = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), dim = c(1, 4))
+```
+
+#### Generic attribute: dimnames
+
+- matrix
+
+```{r matrix_gen_name}
+a <- matrix(data = c(1, 2, 3, 4), nrow = 2, ncol = 2)
+attributes(a)
+colnames(a) <- c("a", "b")
+attributes(a)
+rownames(a) <- c("c", "d")
+attributes(a)
+```
+
+- array
+
+```{r array_gen_name}
+a <- array(data = c(1, 2, 3, 4, 5, 6), dim = c(1, 2, 3))
+attributes(a)
+dimnames(a) <- list("c")
+a
+attributes(a)
+dimnames(a) <- list("c", c("a", "b"))
+a
+attributes(a)
+dimnames(a) <- list("c", c("a", "b"), c("a1", "a2", "a3"))
+a
+attributes(a)
+```
+
+因为 matrix 可以视作是一个\(2\times2\)的 array，所以`dimnames()`同样也适用于`matrix`，例如：
+
+```{r matrix_dimnames}
+a <- matrix(data = c(1, 2, 3, 4), nrow = 2, ncol = 2)
+dimnames(a) <- list(c("c", "d"), c("a", "b"))
+a
+attributes(a)
+```
+
+但`dimnames()`不能用于 vector，会报错，例如
+```{r dimnames_vector, error = TRUE}
+a <- c(1, 2)
+dimnames(a)
+names(a) <- c("a", "b")
+dimnames(a)
+names(a)
+dimnames(a) <- list(NULL, c("c", "d"))
+```
+
+**用`NULL`清空`dimnames`**
+
+`NULL`的第三种用法是“清空 object 的值”，套用在`dimnames`上，也是一样的效用。例如：
+
+```{r matrix_remove_dimnames_NULL}
+a <- matrix(data = c(1, 2, 3, 4), nrow = 2, ncol = 2)
+dimnames(a) <- list(c("c", "d"), c("a", "b"))
+a
+attributes(a)
+dimnames(a) <- list(NULL, c("a", "b"))
+a
+attributes(a)
+```
+
+
+#### Are matrix and array suitable for data presenting?
+
+在日常使用中，通过“行”和“列”的方式审视数据是十分常见的，例如实验数据记录时，通常一行是一个实验对象在所有实验记录上的数据，一列是某个实验记录下所有实验对象的数据。例如`iris`是 Fisher 采集的关于 50 种花的一些信息：
+
+```{r eval = TRUE}
+head(iris)
+```
+
+同时，matrix 和 array 是数学和统计中比较重要的概念，特别是 matrix 与线性代数的紧密联系，代码中涉及到 matrix 的处理如果都能借助线性代数的一些运算来处理，代码的执行效率会高很多，所以 matrix 的运用较为广泛。
+
+但是 matrix 和 array 都要求内部的 element **必须是同一种 type**，但是实际上不同的数据可能是完全不一样的 element type。这时候就要用到 data.frame。data.frame 可以视作是 2 维的数据矩阵，和 matrix 有着同样的维数，但是 data.frame 的每一列都是一个 atomic vector ，不同列的`element type`可以不同。data.frame 是 R 中使用非常广泛的一种结构类型，稍后会重点讲解。但在讲 data.frame 之前，要先讲 list，因为 data.frame 本质上是 list。
+
+
+### List
+
+list 本质上是 vector，相当于把各种不同 structure type 的 object 作为 list 这个大 vector 的各个 element，如下图所示：
+
+<img style = "display: block; margin: auto;" src="images/list structure.png" width="60%"/>
+
+可以通过`list()`来构建。例如：
+
+```{r list_example1}
+l1 <- list(
+  list(1, 2, 3),
+  c(1L, 2L, 3L), 
+  "a", 
+  c(TRUE, FALSE, TRUE), 
+  c(2.3),
+  c(NA, NA, NA), 
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+str(l1)
+typeof(l1)
+attributes(l1)
+is.vector(l1)
+```
+
+从这个例子中可以看出，list 中的 element 可以是任意 type，甚至可以是 list 套 list，无限嵌套。这使得 list 的处理可以异常灵活。一些常见统计方法的 function 的输出结果就是 list，因为可以把很多不同的信息放在一个 list里面同时输出，非常方便。例如：
+
+```{r list_example2}
+result_t <- t.test(1:10, y = c(7:20))
+is.list(result_t)
+str(result_t)
+attributes(result_t)
+```
+
+因为 list 本质上是 vector，所以也可以通过`vector()`产生指定长度的 list。
+
+```{r vector_gen_list}
+exam_sumary_all_class <- vector(mode = "list", length = 4)
+exam_sumary_all_class
+```
+
+#### Generic attribute: names
+
+因为 list 是 vector，所以 list 也只能有一个 attribute，就是`names`，并且只能使用`names()`来改动该 attribute，而不能使用`dimnames()`。例如：
+
+```{r list_example1_name}
+l1 <- list(
+  a = list(1, 2, 3),
+  b = c(1L, 2L, 3L), 
+  c = "a", 
+  d = c(TRUE, FALSE, TRUE), 
+  e = c(2.3),
+  f = c(NA, NA, NA), 
+  g = matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+)
+attributes(l1)
+str(l1)
+l1 <- list(
+  list(1, 2, 3),
+  c(1L, 2L, 3L), 
+  "a", 
+  c(TRUE, FALSE, TRUE), 
+  c(2.3),
+  c(NA, NA, NA), 
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+)
+names(l1) <- c("a", "b", "c", "d", "e", "f", "g")
+attributes(l1)
+str(l1)
+```
+
+`unlist()`可以把一个 list 平铺展开为一个 atomic vector，有一些情况下会用得到，例如：
+
+```{r list_example3}
+str(l1)
+unlist(l1)
+```
+
+
+### Factor
+
+在讲 data.frame 之前，还要再讲一个十分常用的 structure type——factor，常用于类别型数据（既可以是文本,又可以是数值）。matrix 和 array 相对于 vector 而言是多了`dim`这一个 attribute，而 factor 则是在 atomic vector 的基础上加了两个 attributes，分别是水平（`levels`）和类（`class`）。
+
+#### Special attribute: levels and class
+
+`class`是一种比较特殊的 attribute，一个 object 如果被赋予了`class`，就意味着这个对象变成了一个`S3` object。此部分内容涉及到面向对象编程的知识，不掌握并不会影响正常使用 R ，故跳过此部分内容。
+
+```{r factor_example1}
+f1 <- factor(c(2, 1, 3, 2, 1, 1, 1, 3))
+f1
+attributes(f1)
+```
+
+其中，`levels`有 3 种，分别是`1,2,3`，`class`是`factor`。关于`levels`有两点需要注意：
+
+1. factor 的`levels`是有顺序的，默认排序规则是**升序**：
+  - 如果是 double，integer 或 logical，则是由小到大；
+  - 如果是 character，则是首字母升序排列，如果首字母一样，就按找第二个字母升序排列，以此类推。
+
+```{r factor_level_order}
+f2 <- factor(c("2", "1", "3", "2", "e", "x", "a", "d"))
+f2
+attributes(f2)
+```
+
+2. R 的很多读取数据的 function 默认会将数据中的 character vector 自动转换为 factor，此时的`levels`很有可能需要调整（详见下方调整`levels`来分组画图的例子）， R 版本 4.0.0 以上已经关闭了这种默认行为，4.0.0 以下可以通过`stringsAsFactors = FALSE`设定来关闭这种默认行为。
+
+#### Generic attribute: names
+
+factor 也可以有`names`的 attribute，添加方式和 vector 一样，并且和 vector、list 一样，不能用`dimnames()`，只能用`names()`，就不在此赘述。
+
+#### When to use factor
+
+Factor 天然地适合于类别数据，比如说性别、班级、学校等，因为这些类别数据的值的种类\\水平是已知的，正好匹配上`levels`这个 attribute。例如使用类别数据作为分组标签来画图：
+
+```{r factor_plot1}
+gender <- factor(c("female", "male", "female", "male", "female", "female"))
+school <- factor(c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"))
+age <- c(18, 20, 19, 19, 21, 20)
+df2 <- data.frame(gender, school, age)
+df2
+ggplot(data = df2, aes(x = gender, fill = gender)) + 
+  geom_bar() + 
+  facet_grid(.~ school)
+```
+
+通过调整 factor 对象的`levels`顺序可以实现对图像的快速重新排序：
+
+```{r factor_plot2}
+gender <- factor(c("female", "male", "female", "male", "female", "female"))
+school <- factor(c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"))
+age <- c(18, 20, 19, 19, 21, 20)
+df2 <- data.frame(gender, school, age)
+df2$school <- factor(df2$school, levels = c("jxnu", "ncu", "jxufe", "jxau"))
+df2
+ggplot(data = df2, aes(x = gender, fill = gender)) + 
+  geom_bar() + 
+  facet_grid(.~ school)
+```
+
+
+## Data frame
+
+Data.frame 在 R 中的运用非常之广，原因就在于它既符合我们对于数据的矩阵式（行、列）呈现方式的直觉理解，又具备 list 同时储存 element type 不同的 atomic vector 的灵活性。data.frame可以视作是多个同样长度、但 element type 不尽相同的 atomic vector 横向合并在一起，如下图所示：
+
+<img style = "display: block; margin: auto;" src="images/data.frame structure.png" width="30%"/>
+
+data.frame 相比于 vector，多了（col）`names`，`row.names`，`class`3 个 attributes。
+
+### Special attribute: class
+
+此部分内容从略。
+
+### Generic attributes: names and row names
+
+例如使用`data.frame()`创建 data.frame object：
+
+```{r dataframe_example1_noname}
+df2 <- data.frame(c("female", "male", "female", "male", "female", "female"), 
+                  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+                  c(18, 20, 19, 19, 21, 20))
+df2
+attributes(df2)
+```
+
+从例子里可以看出，data.frame 有别于其他 structure type，只要生成一个 data.frame 的 object，就一定会有与 name 有关的 attribute ——`names`和`row.names`，其他 structure type 不指定就为`NULL`。并且，如果不指定，就会自动生成，其中`row.names`使用的是行数，`names`使用的是转换成 character 后的原始`value`（转换时，所有非字母内容都会被转换成`.`）。
+
+```{r dataframe_example1_name}
+# 1
+df2 <- data.frame(gender = c("female", "male", "female", "male", "female", "female"), 
+                  school = c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+                  age = c(18, 20, 19, 19, 21, 20))
+df2
+attributes(df2)
+# 2
+# 1
+df2 <- data.frame(c("female", "male", "female", "male", "female", "female"), 
+                  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+                  c(18, 20, 19, 19, 21, 20))
+names(df2) <- c("gender", "school", "age")
+df2
+attributes(df2)
+# 3
+gender <- c("female", "male", "female", "male", "female", "female")
+school <- c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau")
+age <- c(18, 20, 19, 19, 21, 20)
+df2 <- data.frame(gender, school, age)
+df2
+attributes(df2)
+```
+
+因为 data.frame 有着和 matrix 一样的数据呈现方式，所以，也可以使用`dimnames()`，
+```{r dimnames_data_frame}
+df2 <- data.frame(c("female", "male", "female", "male", "female", "female"), 
+                  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+                  c(18, 20, 19, 19, 21, 20))
+dimnames(df2) <- list(c("1", "2", "3", "4", "5", "6"), 
+                      c("gender", "school", "age"))
+```
+
+注意，当创建 data.frame 时使用的 vectors 长度不一致时，回收法则（`recycling rule`，详见“值、结构类型的转换”章节中的注意事项部分）会发挥作用，例如：
+```{r dataframe_example2}
+data.frame(x = c(1, 2), y = c("a", "b", "c", "d"))
+```
+
+当长 vector 的长度不是短 vector 的长度的整数倍时，无法创建 data.frame，例如：
+
+```{r dataframe_example3, error = TRUE}
+data.frame(x = c(1, 2, 3), y = c("a", "b", "c", "d"))
+```
+
+### List in data.frame (optional)
+
+因为 data.frame 可以视作多个独立且等长的 vectors 横向拼接起来，而 list 本质是 vector，所以 data.frame 中的 column 也可以是 list：
+
+```{r list_in_data.frame}
+records <- data.frame(ID = 1:2, gender = c("female", "male"))
+records$scores <- list(
+  data.frame(
+    t1 = sample(5, 10, replace = TRUE),
+    t2 = sample(5, 10, replace = TRUE),
+    t3 = sample(5, 10, replace = TRUE)
+  ),
+  data.frame(
+    t1 = sample(5, 10, replace = TRUE),
+    t2 = sample(5, 10, replace = TRUE),
+    t3 = sample(5, 10, replace = TRUE)
+  )
+)
+str(records)
+# try View(records) in console
+```
+
+## Recap
+
+1. vector 是 R 最基础的 structure type；
+2. 各种 structure type 的 attribute ：
+
+| attributes        | vector   | matrix   | array    | list       | factor |  data.frame           |
+|-------------------|----------|----------|----------|------------|--------|-----------------------|
+| 与 name 有关的      | 可有`names`    | 可有`dimnames` | 可有`dimnames` | 可有`names`      | 可有`names`  | 必有(col)`names`和`row.names` |
+| 操作与 name 有关`attributes`时使用的`function`     | `names()`    | `colnames()`和`rownames()`，或`dimnames()` | `dimnames()` | `names()`      | `names()`  | `names()`和`row.names()`，<br>或`dimnames()`，<br>或`colnames()`和`rownames()` |
+| 与 dimension 有关 |          | 必有`dim`      | 必有`dim`      |            |        |                       |
+| 与 `class`有关     |          |          |          |            | 必有`factor` | 必有`data.frame`            |
+| 独有的            |          |          |          |            | 必有`levels` |                       |
+
+3. `names()`，`dimnames()`，`colnames()`，`rownames()`，`row.names()`都可以用来**获取**和**更改** object 与 name 有关的 attribute；
+4. 使用`NULL`清空某与 name 有关 attribute（data.frame 则是恢复默认 name）；
+5. 各种 structure type 的生成 function：
+
+| 生成 function  | vector            | matrix     | array      | list       | factor     |  data.frame    |
+|----------|-------------------|------------|------------|------------|------------|----------------|
+|          | `c()`, `vector()` | `matrix()` | `array()`  | `list()`，`vector()`  | `factor()` | `data.frame()` |
+
+6. data.frame 和 list 中的 element 可以是不同的 element type；
+7. list 的本质是 vector；
+8. data.frame 的本质是 list；
+9. factor 的`levels`是有大小顺序的，只要是需要调整统计分析结果中不同组别的呈现顺序，第一时间要想到用 factor。
+

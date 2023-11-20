@@ -1,0 +1,691 @@
+# Basic: regular operations
+
+R 中可以执行各式各样的操作，这些操作都是通过使用 operator 或 function 实现。常见的操作有：
+
+- 基本数学运算
+- 关系和逻辑
+- 筛选和排序
+- 其他
+
+注意：绝大多数 operators 和 functions 都支持 recycling rule（详见\@ref(byrow-recycling)）。
+
+由于 subsetting operator 进阶用法的第二步是将拆解的步骤（操作）转换成相应的代码，所以本节中将重点演示如何将部分 operator 和 function 运用在 subsetting 中。
+
+
+## Basic mathematical operations
+
+### Arithmetic operators
+
+`+` `-` `*` `/` `^` `%%` `%/%` `%*%`
+
+```{r operation_arithmetic_mod_integer_divition}
+c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) %% 5  # 求余数
+c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) %/% 5  # 整除
+m1 <- matrix(c(1, 2, 3, 4, 5, 6), 3, 2)
+m1
+m2 <- matrix(c(1, 2, 3, 4, 5, 6), 2, 3)
+m2
+m1 %*% m2   # 矩阵乘法
+```
+
+### Functions
+
+#### Extremum and range
+
+  - `max(x)`
+  - `min(x)`
+  - `range(x)`
+
+```{r operation_arithmetic_max_mix}
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+max(m1)
+min(m1)
+range(m1)
+```
+
+#### Sum
+
+  - `sum(x)`，连加求和 \(\sum_{i=1}^{n}x_i\)；
+  - `rowSums(x)`，行求和；
+  - `colSums(x)`，列求和。
+
+```{r operation_arithmetic_sum}
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1
+sum(m1)
+rowSums(m1)  
+colSums(m1)
+```
+
+#### Average
+
+  - `mean(x)`，均值 \(\frac{\sum_{i=1}^n(x_i)}{n}\)；
+  - `rowMeans(x)`，行均值；
+  - `colMeans(x)`，列均值。
+
+```{r operation_arithmetic_mean}
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1
+mean(m1)
+rowMeans(m1)
+colMeans(m1)
+```
+
+#### Product
+
+`prod(x)`，连乘求积 \(\prod_{i=1}^nx_i=x_1x_2\cdots x_n\)：
+```{r operation_arithmetic_prod}
+m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+prod(m1)
+```
+
+#### Round
+
+  - `round(x, digits = 0)`，取整，规则是 4 舍 6 入，逢 5 成双，即逢 5 时向最近的偶数取整，保留`digits`位小数，默认为 0；
+  - `floor(x)`，向下取整；
+  - `ceiling(x)`，向上取整；
+  - `trunc(x)`，保留整数部分，舍弃小数部分。
+
+<img style = "display: block; margin: auto;" src="images/operation round.png" width="50%"/>
+
+```{r operation_arithmetic_round}
+m1 <- matrix(c(-1.1, -2.5, 3.9, 4.6), 2, 2)
+m1
+round(m1)
+floor(m1)  
+ceiling(m1)  
+trunc(m1)
+```
+
+#### Natrual exponential and logorithm
+
+`exp(x)`，自然指数 \(e^{x}\)
+```{r operation_arithmetic_exp}
+exp(0)
+exp(1)
+```
+
+`log(x, base = exp(1))`，对数 \(\log_{base}x\)，`base`的默认值是`exp(1)`：
+```{r operation_arithmetic_log}
+log(1)
+log(10, 10)
+```
+
+#### Others
+
+- Square root: `sqrt(x)`，即\(\sqrt{x}\)。
+- Trigonometric Functions: `sin(x)`，`cos(x)`，`tan(x)`
+- Absolute value: `abs(x)`，即\(|x|\)。
+- Sign:（正数输出 1，负数输出 -1）
+
+`sign(x)`
+```{r operation_aritgmetic_sign}
+sign(c(-1, 2, -sqrt(2)))
+```
+
+- Transpose
+
+`t(x)`，即\(x'\)或\(x^T\)，将`x`转置（沿主对角线反转，行列互换），`x`可以是 matrix 或 data.frame。
+
+```{r operation_arithmetic_t}
+a <- matrix(c(1, 2, 3, 4, 5, 6), 3, 2)
+a
+t(a)
+```
+
+
+例子：数据转换（[Skewed Distribution: Definition, Examples](http://www.statisticshowto.com/skewed-distribution/)）
+
+<img style = "display: block; margin: auto;" src="images/operation arithmetic example data transformation.png" width="70%"/>
+
+```{r eval = FALSE}
+data$Population <- log(data$Population, base = 10)
+data$Area <- log(data$Area, base = 10)
+```
+
+
+## Relational and Logical operators
+
+### Relational operators
+
+`>`，`<`，`>=`，`<=`，`==`，`!=`。这些 operators 返回的结果都是 logical：
+```{r operation_logical}
+m1 <- matrix(c(-1, -2, 0, 4), 2, 2)
+# 以下代码全部都受到 recycling rule 的作用
+m1 > 0
+m1 < 0
+m1 >= 0
+m1 <= 0
+m1 == 0
+m1 != 0
+```
+
+其中，在使用`==`时需要注意，`object == NA`、`object == NaN`，`object == NULL`都是错误写法：
+```{r test_NA_NaN_NULL_wrong}
+1 == NA
+1 == NaN
+1 == NULL
+```
+
+若想要检测某个 object 究竟是不是`NA`、`NaN`或`NULL`，正确的写法应该是：
+
+```{r test_NA_NaN_NULL_right}
+is.na(c(1, 2, NA))
+is.nan(c(1, 2, NaN))
+is.null(c(1, 2, NULL))
+```
+
+Relational operators 在 subsetting 的进阶写法中十分常用。例如，实训 3-2 第 1 题第 4 小问，剔除“Pick场数”低于 200 的英雄的所有数据：
+```{r operation_relation_example_subsetting}
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+head(data_ori)
+data_200 <- data_ori[c(-7, -13, -15, -16)]
+data_200 <- data_200[data_200[, 7] >= 200, ]
+```
+
+<img style = "display: block; margin: auto;" src="images/operation relation example subsetting.png" width="100%"/>
+
+Basic mathematical operations 和 relational operators 的组合也是 subsetting 进阶写法中常用手段。例如，取绝对值最大的数：
+```{r operation_relation_arithmetic_example}
+a <- c(-0.1, -0.9, 0.2, 0.4)
+a[abs(a) == max(abs(a))]
+```
+
+### Logical operator
+
+#### `&` and `&&`
+
+基本结构：`LHS & RHS`，`LHS && RHS`。
+
+`LHS`（left hand side）和`RHS`（right hand side）的结果是长度为 1 的 logical vector 时，`&`和`&&`等价。
+
+| `LHS`  | `RHS`  | 结果    |
+|----------|----------|---------|
+| `TRUE`   |  `TRUE`  | `TRUE`  |
+| `TRUE`   |  `FALSE` | `FALSE` |
+| `FALSE`  |  `TRUE`  | `FALSE` |
+| `FALSE`  |  `FALSE` | `FALSE` |
+
+```{r operation_relation_and_scalar}
+a <- 3
+a > 2 & a < 4
+a > 2 && a < 4
+```
+
+`LHS`和`RHS`的结果是长度大于 1 的 logical vector 时，`&`和`&&`的结果不同。`&`会比较左右两侧的 logical vector 中每一对 element，`&&`会从左往右比，直到有结果为止，本质上相当于只会比较第一个位置上的那对 elements，也正是因为如此，从 4.3.0 开始，R 强制要求`&&`的`LHS`和`RHS`的长度只能为1（因为只比第一个位置），否则就报错，这点在`&&`的帮助页面也有明确说明（详见`` ?`&&` ``）：
+```{r operation_logical_and_vector, error = TRUE}
+a <- c(1, 2, 3, 4, 5)
+a >= 1
+a <= 3
+a >= 1 & a <= 3
+a >= 1 && a <= 3
+```
+
+#### `|` and `||`
+
+基本结构：`LHS | RHS`，`LHS || RHS`。
+
+当`LHS`（left hand side）和`RHS`（right hand side）的结果是长度为 1 的 logical vector 时，`|`和`||`等价。
+
+| `LHS`  | `RHS`  | 结果    |
+|----------|----------|---------|
+| `TRUE`   |  `TRUE`  | `TRUE`  |
+| `TRUE`   |  `FALSE` | `TRUE`  |
+| `FALSE`  |  `TRUE`  | `TRUE`  |
+| `FALSE`  |  `FALSE` | `FALSE` |
+
+```{r operation_relation_or_scalar}
+a <- 6
+a < 2 | a > 4
+a < 2 || a > 4
+```
+
+当`LHS`和`RHS`（的结果是长度大于 1 的 logical vector 时，`|`会比较左右两侧的 logical vector 中每一对 element，`||`则会报错：
+```{r operation_logical_or_vector, error = TRUE}
+a <- c(1, 2, 3, 4, 5)
+a <= 2
+a >= 4
+a <= 2 | a >= 4
+a >= 1 || a <= 3
+```
+
+**注意**，如果`&`和`|`左右两边的`expr`长度不一，会触发 recycling rule （详见\@ref(byrow-recycling)）。
+
+```{r error=TRUE}
+c(T, F, T) & T
+c(T, F, T) | T
+```
+
+#### `!`
+
+基本结构：`!expr`。若`expr`的结果是`TRUE`，则改为`FALSE`；若`FALSE`则改为`TRUE`：
+```{r operation_logical_no}
+a <- c(1, 2, 3, 4, 5)
+a <= 2
+!(a <= 2)
+!is.na(a)
+```
+
+Relational operator 和 logical operator 组合使用，可以非常便捷完成按照指定条件 subsetting 的任务，尤其是当需要满足的条件较多时：
+```{r operation_relation_logical_example_subsetting}
+m1 <- matrix(runif(25), 5, 5)
+m1
+m1[m1 > 0.2 & m1 < 0.8]
+m1[m1 < 0.3 | m1 > 0.7]
+m1[!(m1 < 0.3 | m1 > 0.7)]
+```
+
+
+## Locate, match and sort
+
+### Locate
+
+`which(x)`，输出`x`中所有`TRUE`的位置信息，`x`必须是一个 logical object。
+
+```{r operation_location}
+a <- runif(5)
+a
+which(a == max(a))
+which(a > 0.5)
+which(a > 0.1 & a < 0.9)
+```
+
+使用`which()`通常不是为了将符合条件的元素取出，而是为了将这些元素的位置找出来，起个名字并保存在 Environment 里，方便后续单独处理这些元素的时候可以直接使用位置索引信息来定位。如果只是需要将符合条件的所有元素取出来，只用 relational operator 就足够了。
+```{r operation_which}
+a <- runif(5)
+a
+a[which(a > 0.5)]
+a[a > 0.5]
+```
+
+如果`x`是一个有`dim`的`array`或`matrix`，`which(x)`可以通过设定`arr.ind = TRUE`来输出按`dim`标识的 index：
+```{r operation_which_arrind}
+m1 <- matrix(1:4, 2, 2)
+which(m1 == 3, arr.ind = TRUE)
+```
+
+### Match
+
+`%in%`: 返回一个和逻辑向量，表示左边的值在右边的依据值中是否有匹配。
+
+`x %in% table`
+
+- `x`: 被匹配的值。
+- `table`: 匹配时依据的值。
+
+```{r}
+vec <- c(1, 2, 3)
+vec_all <- c(6, 1, 5, 6, 1, 4, 4, 2, 10, 5)
+vec %in% vec_all
+vec_all %in% vec
+```
+
+`%in%`可以用于挑选数据的指定列，例如：
+```{r operataion_in}
+vars <- c("x", "y", "z")
+df <- 
+  data.frame(
+    x = sample(5, 10, replace = TRUE), 
+    n = sample(5, 10, replace = TRUE), 
+    z = sample(5, 10, replace = TRUE), 
+    m = sample(5, 10, replace = TRUE), 
+    n = sample(5, 10, replace = TRUE), 
+    y = sample(5, 10, replace = TRUE)
+  )
+df_select <- df[names(df) %in% vars]
+df_select
+```
+
+### Sort
+
+- `sort(x, decreasing = FALSE)`，将`x`升序排列（默认），输出排列后的`x`。`decreasing`是可选 argument。`decreasing = TRUE`则是按照降序排序列。
+
+```{r operation_sort}
+a <- runif(5)
+a
+sort(a)
+sort(a, decreasing = TRUE)
+```
+
+- `order(..., decreasing = FALSE)`，`...`是需一个或多个`object`。`decreasing`是可选`argument`，`decreasing = TRUE`表示按照降序排序列。
+
+`order()`输出的其实是 object 中的元素应该各自调整到哪个位置才能实现排序（升序或降序）。所以，`order()`实际上给出的是位置信息。
+
+a. 无重复元素
+
+```{r operation_order_notie}
+a <- c(5, 1, 8, 2.5)
+order(a)
+order(a, decreasing = TRUE)
+```
+
+<img style = "display: block; margin: auto;" src="images/operation order.png" width="50%">
+
+b. 有重复元素
+
+当输入的单个`object`有重复元素（即`ties`，表示一个独特的值同时有多个位置索引）时，默认是按照元素出现的先后顺序来排序，
+```{r operation_order_ties}
+a <- c(5, 1, 8, 1)
+order(a)
+order(a, decreasing = TRUE)
+```
+
+如果有额外的线索可以区分重复元素时，`order()`可以将这些重复元素按照额外线索排序，
+```{r operation_order_ties_extra_clue}
+score <- c(90, 95, 99, 95)
+id <- c(4, 3, 2, 1)
+order(score, id)
+order(score, id, decreasing = TRUE)
+```
+
+总结一下，当输入 1 个 object 时，`order()`排序的是这个`object`；当输入多个`object`时（这些`object`都必须是同样长度），`order()`排序的依旧是第一个`object`，只不过该 object 中的重复元素是以第 2 个 object 中对应位置上的元素大小为依据，若这些元素依旧是重复的，则按照第 3 个 object 中对应位置上的元素大小为依据，依此类推。
+
+`order()`常用于根据某一列重新排列整个数据。例如根据`score_math`降序排列：
+
+```{r operation_order_example}
+data_set1 <- data.frame(name = c("小红", "小明", "小白", "小黑"), 
+                        id = c(1, 4, 2, 3),
+                        score_math = c(90, 95, 98, 95))
+data_set1[order(data_set1$score_math, id, decreasing = TRUE), ]
+```
+
+`order()`对字符也有效，默认升序，数字按从小到大，英文按字母，中文按拼音顺序，三者的优先级是数字 > 英文字母 > 中文拼音：
+```{r operation_order_letter}
+vec_cha <- c("3", "2", "a", "b", "啊", "呀")
+order(vec_cha)
+vec_cha[order(vec_cha)]
+```
+
+
+## Others
+
+### Combine
+
+- `c(...)`，将多个 object 合并成一个 vector，`...`为要合并的 object。
+- `cbind(...)`，将多个 objects，视作是 columns，将多个 object 横向合并成一个 object，`...`为要合并的 object。
+- `rbind(...)`，将多个 objects 视作是 rows，纵向合并成一个 object，`...`为要合并的 object。
+
+```{r operation_others_bind}
+a <- c(1, 2, 3)
+b <- c(4, 5, 6)
+cbind(a, b)
+rbind(a, b)
+```
+
+### Get the number of
+
+- `length(x)`，返回`x`中 element 的个数；
+- `nrow(x)`或`NROW(x)`，返回`x`的行数，如果`x`没有行数的信息，返回`NULL`；
+- `ncol(x)`或`NCOL(x)`，返回`x`的列数，如果`x`没有列数的信息，返回`NULL`；
+- `nchar(x)`，返回`x`各 element 的字符个数。
+
+```{r operation_others_length}
+df <- data.frame(number = c(1, 2, 3), letter = c("a", "b", "c"))
+length(df)
+nrow(df)
+ncol(df)
+fruits <- c("banana", "apple", "pineapple", "melon")
+length(fruits)
+nrow(fruits)
+ncol(fruits)
+nchar(fruits)
+```
+
+### Generate sequence
+
+#### Operator
+
+`from:to`，生成有序整数数列。`from`为数列的起点；`to`为数列的终点。
+
+```{r operation_others_colon}
+1:100
+```
+
+`:`可以用来生成行索引，在需要分半数据进行统计分析（交叉验证，复本信度等）时快速取出数据子集。以英雄联盟数据集为例：
+```{r operation_others_colon_split}
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+data_subset1 <- data_ori[1:trunc(nrow(data_ori)/2), ]
+data_subset2 <- data_ori[(trunc(nrow(data_ori)/2) + 1):nrow(data_ori), ]
+```
+
+#### Functions： 
+
+`seq(from = 1, to = 1, by = ((to - from)/(length.out - 1)), length.out = NULL)`，生成有序数列。`from`为数列的起点，`to`为数列的终点。可选 argument：
+
+a. `by`为步长，即后一个数和前一个数之差；
+b. `length.out`为生成数列的长度。
+
+```{r operation_others_seq}
+seq()
+seq(from = 1, to = 100)  # 等价于 1:100
+seq(1, 100, by = 3)
+seq(1, 100, length.out = 34)
+```
+
+`seq()`可以用于快速奇偶分半数据。以英雄联盟数据集为例：
+```{r operation_others_rep_oddeven_split}
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+data_ori <- cbind(ID = 1:nrow(data_ori), data_ori)
+data_subset1 <- data_ori[seq(1, nrow(data_ori), 2), ]
+data_subset2 <- data_ori[seq(2, nrow(data_ori), 2), ]
+```
+
+`rep(x, times = 1, length.out = NA, each = 1)`，生成重复序列。
+```{r operation_others_rep}
+rep(0, 3)
+rep(c(1, 2, 3), 3)
+rep(c(1, 2, 3), 3, length.out = 10)
+rep(c(1, 2, 3), 3, length.out = 30, each = 3)
+```
+
+`rep()`可以巧妙地和`subsetting`的操作相结合，来实现快速复制矩阵。例如以一个 \(2\times2\) 的矩阵为最小 element，复制出一个 \(2 \times 2\) 的大矩阵：
+```{r operation_others_repmatrix}
+m1 <- matrix(1:4, 2, 2)
+m1[rep(1:nrow(m1), 2), rep(1:ncol(m1), 2)]
+```
+
+来源：[R中是否有复制平铺矩阵的函数](https://d.cosx.org/d/107403-107403)
+
+### Random sampling
+
+`sample(x, size, replace = FALSE, prob = NULL)`，从`x`中随机取出`size`个元素。`x`可以是一个 vector 或 integer scalar，当`x`是 integer scalar 时，等价于`1:x`；`size`是 integer。可选 argument：
+
+a. `replace = TRUE`表示有放回抽样；
+b. `prob`是一个向量，每一个元素是`x`中对应元素被抽中的概率。
+
+```{r operation_others_sample}
+sample(5, 1)  # 等价于 sample(5, 1, prob = rep(1/5, 5))
+sample(5, 5)
+sample(5, 5, replace = TRUE)
+```
+
+```{r operation_others_sample_pro}
+sample(6, 6, replace = TRUE, prob = c(1/6, 1/6, 1/6, 1/6, 1/3, 1/3))
+```
+
+随机抽样的一个典型的应用场景是自助法（Bootstrap），从样本中随机取出多批指定大小的数据，当作是平行样本。以英雄联盟数据集为例：
+```{r operation_others_sample_bootstrap}
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+data_sample <- data_ori[sample(nrow(data_ori), 30), ]
+```
+
+### Concatenate strings 
+
+`paste(..., sep = " ", collapse = NULL)`，将`object`按照指定方式拼接成字符串。`...`是一个或多个待拼接的`object`。可选`argument`如下：
+
+a. `sep = " "`是拼接时用来分隔各项的字符串，默认值是一个英文空格；
+b. `collapse = NULL`
+表示拼接好的各项最后合并成一个字符串，各项间用`collapse`的值来分隔，默认值是`NULL`，即不合并成一个字符串。
+
+```{r operation_others_paste}
+paste(1:12)  # 等价于 as.character(1:12)
+paste(1:12, "month")
+paste(1:12, c("st", "nd", "rd", rep("th", 9)), "month")
+paste(1:12, c("st", "nd", "rd", rep("th", 9)), "month", sep = "")
+paste(1:12, c("st", "nd", "rd", rep("th", 9)), "month", sep = "", collapse = ",")
+```
+
+`paste()`可用于自动生成符合要求的文件名：
+```{r operation_others_paste_example_varname}
+num_subsets <- 10
+filenames <- paste(1:num_subsets, 
+                    ".txt",
+                    sep = "")
+filenames
+write.table(data_subset1, filenames[1])
+write.table(data_subset2, filenames[2])
+```
+
+只要是需要按照一定的规律生成字符串，就要想到`paste()`。
+
+### Print to console
+
+有 2 个十分常用的 functions：`print()`和`cat()`。
+
+- `print(x)`，将`x`的 value 输出在 Console。`print(x)`和`x`在单独执行时都会输出`x`的 value，但二者是有几个细微的区别：
+  a. 通过 Source 的方式执行当前活动脚本中所有的代码时，`print(x)`会在 Console 输出`x`的 value，`x`则不会；
+  b. 在 function 内部使用`print(x)`，在执行 function 时会在 Console 输出`x`的 value，`x`则不会；
+  c. 在循环体内部使用`print(x)`会在 Console 输出`x`的 value，`x`则不会（具体例子将在\@ref(control-flow)章节展示）。
+  
+<video src="images/print_source.mp4" width="100%" controls="controls"></video>
+
+<video src="images/print_function.mp4" width="100%" controls="controls"></video>
+
+- `cat(..., sep = " ", fill = FALSE, labels = NULL)`，将输入的一个或多个 object 拼接后输出在 Console。可选 argument：
+  a. `sep = " "`，拼接时用来分隔各项的字符串。
+
+```{r operation_others_cat}
+cat("The correlation between a and b is", 0.6)
+cat("The correlation between a and b is", 0.6, sep = "_")
+cat("The correlation between a and b is\n", 0.6)
+cat("The correlation between a and b is", rep("+", 100), 0.6, rep("+", 100), 
+    sep = "")
+```
+
+### Head and tail
+
+`head(x, n = 6L)`和`tail(x, n = 6L)`，在`Console`输出`x`的前 6 或后 6 个元素（`x`为`vector`）/行（`x`为`matrix`或`data.frame`）。可选`argument`：
+
+a. `n`表示输出的个/行数，默认为 6。
+
+```{r operation_others_head_tail}
+m1 <- matrix(1:100, 10, 10)
+head(m1)
+tail(m1)
+```
+
+### Continuous to discrete 
+
+`cut(x, breaks)`
+
+- `x`: a numeric vector which is to be converted to a factor by cutting.
+- `breaks`: either a numeric vector of two or more unique cut points or a single number (greater than or equal to 2) giving the number of intervals into which x is to be cut.
+
+```{r cut_basic}
+cut(1:10, breaks = c(0, 3, 6, 10))
+```
+
+<img style = "display: block; margin: auto;" src="images/20215311_Acta_Psychologica_Sinica_Table1.png" width="100%"/>
+
+```{r acta_psy_table1}
+# Simulate the demographic data reported in 
+#  http://journal.psych.ac.cn/xlxb/article/2021/0439-755X/0439-755X-53-11-1215.shtml
+
+Income <- c(sample(11999, 122), 
+            sample(12000:35999, 332),
+            sample(36000:100000, 219))
+Income <- c(Income, NA, NA)
+is_lost <- rep(1, length(Income))
+is_lost[c(sample(122, 78), 
+          sample(123:454, 200), 
+          sample(456:673, 140))] <- 0
+is_lost[c(length(Income) - 1, length(Income))] <- NA
+data_xb <- data.frame(Income, is_lost)
+head(data_xb)
+```
+
+```{r acta_psy_table1-solution}
+data_xb$Income <- cut(data_xb$Income, c(0, 11999, 35999, 100000), 
+                      labels = c("￥0-11,999", "￥12,000-35,999", 
+                                 "￥36,000及以上"))
+data_xb$is_lost <- factor(data_xb$is_lost, levels = c(1, 0), labels = c("保留样本", "流失样本"))
+as.matrix(table(data_xb))
+```
+
+### Built-in constants
+
+ R 中内置有如下常量：
+```{r operation_others_builtin_constants}
+pi
+LETTERS
+letters
+month.abb
+month.name
+```
+
+
+## Precedence of operators (optional)
+
+目前学过的 operators 可以大致归为以下几类：
+
+|    类                       | 包括                                 | 如何查看帮助 |
+|-----------------------------|--------------------------------------|----------------|
+| `subsetting` （取子集）     | `$` `@` `[[]]` `[]`          | `` `r '?\x60$\x60'` ``（`$`可替换为任意一个`subsetting operator`）或 `?Extract` |     
+| `Colon`      （分号）       | `:`                          | `` `r '?\x60:\x60'` `` 或 `?Colon `|
+| `Arithmetic` （算术）       | `+`, `-`, `*`, `/`, `^`, `%%`, `%/%`, `%*%` | `` `r '?\x60+\x60'` `` （`+`可替换为任意一个 Arithmetic operator） 或`?Arithmetic`，`?matmult`|     
+| `Relational` （关系）       | `>`, `<`, `<=`, `>=`, `==`, `!=`     | `` `r '?\x60>\x60'` `` （`>`可替换为任意一个 Relation operator）或 `?Comparison`|
+| `Logical`    （逻辑）       | `!`, `&`, `&&`, `|`, `||`            | `` `r '?\x60!\x60'` `` （`!`可替换为任意一个 Logical operator）或 `?Logic` |
+| `Assignment` （分配）       | `<-`             | `` `r '?\x60<-\x60'` `` 或 `?assignOps` |
+
+注意：`` ` ` `` 为反单引号，当某个 name 本身是非法字符（如已经定义的 operator）或者违背 name 命名规则时，就需要加反单引号来标识，否则会被当作是语句直接执行。
+
+以上各 operator 在同一个语句中执行时是有优先顺序（precedence）的，就好比是加减乘除运算有优先顺序一样，同一个式子中先算乘除后算加减。 R 中各 operator 的优先顺序如下：
+
+<img style = "display: block; margin: auto;" src="images/operation precedence.png" width="100%"/>
+
+如果没有注意优先顺序，容易出现代码的执行结果和预期不一致的情况，例如：
+```{r operation_operator_precedence, error = TRUE}
+a <- runif(10)
+a
+#  把最大值最小值所在位置找出来
+position <- 1:length(a)[as.logical(a == max(a) + a == min(a))] 
+position
+```
+
+如果需要保证低优先度的操作被完整执行，不受高优先度代码的影响，需要使用`()`把低优先度的操作包起来：
+```{r operation_operator_precedence_parenthesis}
+a <- runif(10)
+a
+#  把最大值最小值所在位置找出来
+position <- (1:length(a))[as.logical((a == max(a)) + (a == min(a)))]
+position
+```
+
+更多有关 operator 优先顺序的内容请使用`?Syntax`查看。
+
+如果在实际编程过程中，如果不能准确记住各 operator 之间的优先顺序也不要紧。可以在不确定的时候，将不确定的代码单独拿出来执行一下，确保和自己预期的结果一致，如果发现不一致，就说明存在低优先度的操作但没有用`()`的情况，然后再去查看问题到底出在哪一个操作。
+
+
+## Recap
+
+1. 
+
+|  常用操作        |  operators 或 functions  |
+|------------------|----------------|
+| 基本数学运算     | `operator`：`+` `-` `*` `/` `^` `%%` `%/%` `%*%` <br> 极值：`max()` `min()` <br>求和：`sum()` `rowSums()` `colSums()` <br>均值：`mean()` `rowMeans()` `colMeans()` <br>求积：`prod()` <br>取整：`round()` `ceiling()` `floor()` `trunc()` <br>自然指数和对数：`exp()` `log()` <br>开根号：`sqrt()` <br>三角函数：`sin()` `cos()` `tan()` <br>绝对值：`abs()` <br>符号：`sign()`<br>转置：`t()` |
+| 关系和逻辑       | 关系`operator`：`>` `<` `>=` `<=` `==` `!=`<br>逻辑`operator`：`&` `&&` `|` `||` `!` |
+| 定位、匹配和排序       | 定位：`which()`<br>匹配：`%in%`<br>排序：`sort()` `order()` |
+| 其他             | 合并：`c()` `cbind()` `rbind()`<br>个数：`length()` `nrow()` 或 `NROW()` `ncol()` 或 `NCOL()` `nchar()`<br>生成序列：`:` `seq()` `rep()` <br>随机抽样：`sample()`<br>拼接字符：`paste()`<br>输出：`print()` `cat()`<br>“展露头脚”：`head()` `tail()`<br>内置常量：`pi` `letters` `LETTERS` `month.abb` `month.name` <br> 连续变离散: `cut()`|
+2. 大多数 operators 和 functions 支持 recycling rule,（详见\@ref(byrow-recycling）；
+3. `round()`的规则是 4 舍 6 入，逢 5 成双；
+4. `&`（`|`）和`&&`（`||`）的区别是前者匹配所有位置上的元素对，后者只匹配第一个位置；
+5. Relational operator 和 logical operator 常搭配在一起，用于按照指定条件 subsetting；
+6. `cbind()`和`rbind()`的默认输出结果是 matrix，只有拼接的 object 中有 data.frame 时，输出结果才是 data.frame；
+7. 常用`:`、`seq()`、`rep()`和`sample()`产生位置索引，实现快速抽取和复制数据的目的；
+8. 通过 Source 执行活动脚本的全部代码时，要输出内容至 Console 需使用`print()`或`cat()`；
+9. operators 间在执行上有优先顺序，同时使用多种 operators 时要注意检查结果是否符合预期；
+10. 使用`()`包裹住低优先度的代码可以保证这部分代码被完整执行。

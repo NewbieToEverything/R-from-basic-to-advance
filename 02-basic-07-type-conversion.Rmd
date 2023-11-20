@@ -1,0 +1,332 @@
+# Basic: type conversion (optional) {#type-conversion}
+
+转换包括两种，element type 转换和 structure type 转换。
+
+为什么需要转换？是因为在使用某个 function 处理某个 object 的时候，这个对象并不是 function 所要求提供的 element type 或 structure type。所以需要转换才能让 function 顺利执行。
+
+
+## Element type conversion
+
+### Coder initialized conversion
+
+当需要转换时，用户可以主动触发转换。不同的 element type 之的转换，可以使用`as.fun()`族，如下：
+
+|    `function`          | 用途                      |
+|------------------|---------------------------|
+| `as.logical()`   | 转换为 logical 类型       |
+| `as.integer()`   | 转换为 integer 类型       |
+| `as.double()`    | 转换为 double 类型        |
+| `as.character()` | 转换为 character 类型     |
+
+1. `as.logical()`
+
+如果转换的对象是 integer 或 double，那么该对象中的 0 会被转换为`FALSE`，所有非 0 的元素会被转换为`TRUE`，除此之外的任何对象都会被转换为`NA`例如：
+
+```{r value_transform_example_logical, warning = TRUE, error = TRUE}
+var_int
+var_dbl
+var_chr
+var_na
+var_null
+as.logical(var_int)
+as.logical(var_dbl)
+as.logical(var_chr)
+as.logical(var_na)
+as.logical(var_null)
+```
+
+2. `as.integer()`
+
+- 如果被转换的对象是 double，会把所有元素向 0 取整；
+- 如果转换的对象是纯数字 character，会把该字符串先转换为 double，然后再按前一条规则转换；
+- 如果被转换对象是 logical，则会把`TRUE`转换成`1L`，把`FALSE`转换成`0L`。
+
+例如：
+
+```{r value_transform_example_integer, warning = TRUE, error = TRUE}
+var_lgl
+var_int
+var_chr
+var_na
+var_null
+as.integer(var_lgl)
+as.integer(var_dbl)
+as.integer(var_chr)
+as.integer(var_na)
+as.integer(var_null)
+as.integer("10.1")
+```
+
+3. `as.double()`
+与`as.integer()`类似，如果转换的对象是纯数字 character，会把该字符串转换为 double，例如：
+
+```{r value_transform_example_double, warning = TRUE, error = TRUE}
+var_lgl
+var_int
+var_chr
+var_na
+var_null
+as.double(var_lgl)
+as.double(var_int)
+as.double(var_chr)
+as.double(var_na)
+as.double(var_null)
+as.double("3.141592653")
+```
+
+注：`as.double()`与`as.numeric()`等价。
+
+4. `as.character()`
+
+```{r value_transform_example_character, warning = TRUE, error = TRUE}
+var_lgl
+var_int
+var_dbl
+var_na
+var_null
+as.character(var_lgl)
+as.character(var_int)
+as.character(var_dbl)
+as.character(var_na)
+as.character(var_null)
+```
+
+
+几种特殊的 element type 如`NA`、`NULL`、`NaN`中只有`NULL`有对应的转换`function` `as.null(name)`，不过较少使用，等价于`name <- NULL`。余下的特殊 element type 也都可以通过`<-`直接实现转换，例如：
+
+```{r special_trans}
+a <- NA
+b <- NaN
+```
+
+
+### Automatic conversion by R: coercion
+
+被动转换，或强制转换（coercion）实际上就是 R 在一些必要的情况，帮我们自动完成了 element type 转换。那什么时候是必要的情况？如果使用`c()`合并element type 不同的 scalars 来创建一个新的 vector，那么就会一定会发生 coercion，因为在 R 中，vector 内所有 element 必须是相同 type。
+
+coercion 遵循的优先级为 expression > character > double > integer > logical（包括`NA`）> raw。例如
+
+```{r coercion_example}
+typeof(c("a", expression(1 + 2)))
+typeof(c(1, expression(1 + 2)))
+typeof(c(1L, expression(1 + 2)))
+typeof(c(NA, expression(1 + 2)))
+typeof(c(raw(2), expression(1 + 2)))
+typeof(c("a", 1))
+typeof(c("a", 1L))
+typeof(c("a", TRUE))
+typeof(c("a", NA))
+typeof(c("a", raw(2)))
+typeof(c(1, 1L))
+typeof(c(1, TRUE))
+typeof(c(1, NA))
+typeof(c(1, raw(2)))
+typeof(c(1L, TRUE))
+typeof(c(1L, NA))
+typeof(c(1L, raw(2)))
+typeof(c(TRUE, raw(2)))
+typeof(c(NA, raw(2)))
+```
+
+coercion 的规则中不包括`NULL`，因为`NULL`本身没有任何内容，`NULL`在一个向量的任何位置都意味着这个向量没有这个位置。例如:
+
+```{r coercion_null}
+c(NULL, "a", NA)
+c("a", NA, NULL)
+c("a", NULL, NA)
+```
+
+coercion 容易在不经意间造成一些问题，例如，假设有两批数据，分别读入到 R 中，需要合并在一起计算均值。但其中一批是 character，导致合并时发生 coercion，求均值出错，代码为：
+
+```{r coercion_devil, warning = TRUE}
+a <- matrix(1, 3, 3)
+a
+b <- matrix(c("1", "1", "1"), 3, 1)
+b
+ab <- cbind(a, b)
+ab
+mean(ab)
+```
+以上由 coercion 导致的错误通常都会表现为某个 function 报错，提示给这个 function 提供的某个 argument 的 element type 不符合要求。
+
+coercion 不仅发生在使用`c()`将不同类型的 scalars 合并成 vector 的情况，还会发生在各种各样的运算中。例如，在需要 numeric object，如果提供的是 logical object，那么 R 就会将 logical object 转换成 integer，其中`TRUE`会被自动转换为`1L`，`FALSE`会被自动转换为`0L`；
+
+```{r collapse = TRUE}
+1*TRUE  # 乘法运算需要 numeric value，但提供的是 TRUE，执行时被自动转换成 1L
+1 + FALSE  # 同理，FALSE 在执行时会被自动转换成 0L
+```
+
+活用 coercion 可以写出一些简便的代码，例如：
+```{r coercion_angle, warning = TRUE}
+score <- sample(100, 60)
+score
+sum(score > 90)
+```
+
+
+### Frequently made mistake
+
+因为 element type 并不匹配导致的 error 或 warning，多数情况下是由 coercion 导致的，这种问题通常表现为某个 function 弹出 error 或 warning，但问题的根源在使用这个 function 之前，所需 argument 的 element type 就是错的；
+```{r element_type_mistake_1, warning = TRUE, error = TRUE}
+cor("1", "2")
+mean(c("1", "2"))
+```
+
+
+## Structure type conversion
+
+同样，不同的结构类型也可以使用`as.fun()`族转换，例如：
+
+|    `function`     | 用途                      |
+|-------------------|---------------------------|
+| `as.vector()`     | 转换为 vector 类型        |
+| `as.matrix()`     | 转换为 matrix 类型        |
+| `as.data.frame()` | 转换为 data.frame 类型    |
+| `as.list()`       | 转换为 list 类型          |
+| `as.factor()`     | 转换为 factor 类型        |
+
+但是，也不建议盲目使用，因为这些 function 的结果会比较难预判，例如：
+
+- 转换对象是 vector：
+
+```{r data_type_asfun_vector}
+var_dbl
+as.matrix(var_dbl)
+as.data.frame(var_dbl)
+as.list(var_dbl)
+as.factor(var_dbl)
+as.array(var_dbl)
+```
+
+- 转换对象是 data.frame：
+
+```{r data_type_asfun_dataframe, error = TRUE}
+as.matrix(df1)
+as.vector(df1)
+as.list(df1)
+as.factor(df1)
+```
+
+**注意**，在低于 4.2.0 版本的 R 中，`as.vector(x)`如果`x`是 data.frame，直接返回`x`；在大于 4.2.0 版本的 R 中，返回一个 list，这更符合几种 structure types 间的关系，即 data.frame 本质是 list，而 list 本质是 vector。
+
+```{r eval = FALSE}
+df <- data.frame(x = c(1, 2, 3), y = c(4, 5, 6))
+as.vector(df)
+```
+
+R<4.2.0
+```{r eval = FALSE, comment = ""}
+  x y
+1 1 4
+2 2 5
+3 3 6
+```
+
+R>=4.2.0
+```{r eval = FALSE, comment = ""}
+$x
+[1] 1 2 3
+
+$y
+[1] "a" "b" "c"
+```
+
+- 转换的的对象是 list：
+
+```{r data_type_asfun_list}
+str(l1)
+as.vector(l1)
+as.matrix(l1)
+as.array(l1)
+```
+
+- 转换的对象是 array：
+
+```{r data_type_asfun_array}
+a1
+as.vector(a1)
+as.matrix(a1)
+as.data.frame(a1)
+as.list(a1)
+as.factor(a1)
+```
+
+实际上，之前提到的创建 matrix 和 array 时使用的`matrix()`和`array()`，本质上是将 vector 转换为 matrix 和 array，如：
+
+```{r data_type_transform_example1}
+matrix(data = c(1, 2, 3, 4), nrow = 2, ncol = 2)
+array(data = c(1, 2, 3, 4, 5, 6), dim = c(1, 2, 3))
+```
+
+如果涉及到转换目标是 matrix、array，且转换前后 object 维数不同（如 atomic vector 转 matrix，\(2\times3\) matrix 转\(1\times2\times3\) array，等等）时，请尽量使用上述两个 functions。
+
+
+### Conversion between matrix and data frame
+
+matrix 和 data.frame 因为都是行 + 列的呈现形式，所以这两种 structures 互相转换不会改变原有结构。此外，由于大多数读取数据的 function 会自动讲读取的数据存成一个 data.frame，所以使用较为频繁的场景是 data.frame 转 matrix。
+
+```{r data_type_transform_matrix_dataframe}
+str(iris)
+is.data.frame(iris)
+str(as.matrix(iris))
+```
+
+
+### By row and recycling rule {#byrow-recycling}
+
+**按列转换**。当转换前后 object 的维数不同时，数据将会按照列转换，例如：
+
+1 维转 2 维：
+```{r 1_2}
+matrix(c(1, 2, 3, 4), 2, 2)
+```
+
+2 维转 1 维：
+```{r 2_1}
+as.vector(matrix(c(1, 2, 3, 4), 2, 2))
+```
+
+2. **回收法则**（[recycling rule](http://www.hep.by/gnu/r-patched/r-lang/R-lang_41.html#:~:text=R%20Language%20Definition%3A%203.3.1%20Recycling%20rules%203.3.1%20Recycling,add%20c%20%281%2C%202%2C%203%2C%201%2C%202%2C%203%29.)）。当转换的 vector 和被转换的 vector 长度不一致时，绝大多数情况下， R 会自动把短的 vector 扩展成和长的 vector 一样长度，相当于把短 vector 回收（recycle）重复利用。例如：
+
+```{r recycling_rule_example_1}
+a <- c(1, 2)
+matrix(a, nrow = 2, ncol = 2)
+```
+
+当长 vector 的长度并不是短 vector 的长度的整数倍时， R 依然会执行 recycling rule，但是会给出一个 warning，例如：
+
+```{r recycling_rule_example_2, warning = TRUE}
+a <- c(1, 2, 3)
+matrix(a, nrow = 4, ncol = 4)
+```
+
+然而，如果是要将不同长度的 vector 作为 data.frame 的元素时，非整数倍的差异会直接导致报错，
+
+```{r recycling_rule_example_2_dataframe, error = TRUE, warning = TRUE}
+data.frame(x = c(1, 2), y = c(1, 2, 3))
+```
+
+Recycling rule 不仅限于转换数据的情况，任何涉及到需要操作的多个对象长度必须一致的情况，该法则都会发挥作用，例如：
+
+```{r recycling_rule_example_3, warning = TRUE}
+a <- c(1, 2, 3, 4)
+b <- c(2, 4)
+a*b
+a + 1
+```
+
+**按列转换**和**recycling rule**这两个细节是 R 很重要的特点。在编程过程中如果能够灵活运用这两点，可以使用简短的代码达到一样的效果。在后续章节的学习过程中，还会讲到这两点在解决实际问题中的运用。
+
+除此之外，还有很多`as.fun()`，在使用 Rstudio 时，可以通过输入`as.`并借助自动补全（auto completion）功能查看。
+
+
+## Recap
+
+1. 转换元素类型时，请确认转换的 object 是 atomic vector；
+2. logical 和 integer 之间相互转换时，`TRUE`对应 `1L`，`FALSE`对应 `0L`；
+3. double 转 logical 时，非 `0` 对应`TRUE`，`0` 对应`FALSE`；
+4. double 转 integer 时，会把所有 elements 向下取整；
+5. 只包含数字的 character 可以直接转为 double；
+6. 只包含数字的 character 转为 integer 时会先转为 double，再由 double 转为 integer；
+7. matrix 和 data.frame 因为呈现方式上的一致性，可以无障碍互相转换，所以`as.matrix()`和`as.data.frame()`的使用较多；
+8. 记住**按列转换**和**recycling rule**，尤其是后者。

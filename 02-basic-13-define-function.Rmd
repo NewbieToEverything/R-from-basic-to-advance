@@ -1,0 +1,416 @@
+# Basic: define function {#define-function}
+
+如果说常用的 function 是一把工具，那么知道怎么 define (定义) your own function 就是可以给自己打造一把趁手的工具。
+
+本章将以定义 function 为目标，来介绍所需要的知识。
+
+
+## Basic structure of function definition
+
+```{r eval = FALSE}
+function(arglist) {
+  expr
+  return(value)
+} 
+```
+
+例如`which()`：
+```{r echo = FALSE, comment = ""}
+which
+```
+
+如果是定义 function，则基本结构保持不变，用`<-`给定义的 function 取个名字即可，
+
+```{r eval = FALSE}
+name_fun <- function(arglist) {
+  expr
+  return(value)
+} 
+```
+
+例如：
+```{r eval = FALSE}
+mean_byme <- function (x) {
+  mean_x <- sum(x)/length(x)
+  return(mean_x)
+}
+```
+
+function 也是 R 中的一种 object，同样是遵循`x <- value`的基本语法结构，只不过`value`换成了 function 的基本结构而已。
+
+可以通过 Snippets 快速输入 function 的基本结构：
+
+<video src="images/fun_snippet.mp4" width="100%" controls="controls"></video>
+
+前面讲到，只要把`x <- value`的代码执行，就会把产生的 object 存到 environment 里去。同样的，只要把定义 function 的所有代码从上到下逐行执行，就会把产生的 function object 存到 environment 里去，然后就可以和正常的 function 一样调用了。
+
+<video src="images/fun_eval.mp4" width="100%" controls="controls"></video>
+
+## A few caveats
+
+1. `return`会直接终止所在的 function 并返回结果；
+
+```{r return_will_end_function}
+return_larger_than_two <- function(x) {
+  for (i in seq_along(x)) {
+    if (x[i] > 2) return(x[i])
+    print(x[i])
+  }
+}
+test <- return_larger_than_two(1:4)
+test
+```
+
+2. 如果不写`return`，默认返回最后一行代码的执行结果；
+
+```{r return_last_evaluation}
+mean_byme_with_return <- function(x) {
+  mean_x <- sum(x)/length(x)
+}
+test <- mean_byme_with_return(c(1, 2, 3))
+test
+# 等价于
+mean_byme_without_return <- function(x) {
+  mean_x <- sum(x)/length(x)
+  return(mean_x)
+}
+test <- mean_byme_without_return(c(1, 2, 3))
+test
+```
+
+<video src="images/fun_noreturn.mp4" width="100%" controls="controls"></video>
+
+3. 如果`expr`非常简单，`{}`可以省略不写，
+
+```{r eval = FALSE}
+mean_byme <- function(x) mean_x <- sum(x)/length(x)
+```
+
+从 4.1.0 以上版本的 R 开始，支持使用`\`替代`function`前缀，上述代码可以进一步简写为：
+```{r eval = FALSE}
+mean_byme <- \(x) sum(x)/length(x)
+```
+这种写法常用于 anonymous function，使代码更加简洁。
+
+4. 如果自定义 function 时，不提供 function 名，就相当于创建了一个 anonymous function，该 function 所在的代码被执行多少次，这个 function 就执行多少次，执行完毕就“销声匿迹”，好比是一次性的 function。
+
+```{r anonymous_function1}
+(\(x) x + 1)(1)
+for (i in 1:3) {
+  print((\(x) x + 1)(i))
+}
+```
+
+anonymous function 通常并不像上面的例子中的第一行展示的一样单独使用，而是搭配诸如`apply()`等高阶 function 使用（详见 the apply family \@ref(apply-family)
+），例如：
+
+```{r function_anonymous_with_apply}
+m1 <- matrix(1:4, nrow = 2, ncol = 2)
+m1
+apply(m1, MARGIN = 1, FUN = \(x) x + 1)
+```
+
+## Argument {#argument}
+
+1. 必选 argument
+
+function 是针对某个或某些 objects 的一组操作，一般都会有必选 argument。例如`mean(x)`，就必须要提供`x`，否则就会报错：
+```{r eval = TRUE, error = TRUE, comment = ""}
+mean()
+```
+
+由于 R 是以统计分析见长，而统计分析必然离不开数据，所以，R 中相当数量的 function 都会将数据作为其必选 argument，对应的 argument 通常命名为`x`、`data`或其他类似意思的单词。此外，argument 一般都会在所有的 arguments 中处于相对靠前的位置。这些规律都会帮助理解本章中的 evaluation 小节（详见\@ref(evaluation)）给出的建议。
+
+2. 可选 argument
+
+除了必选 argument 以外的所有 arguments，就是可选 argument，通常这些 arguments 都预先提供了默认值。
+例如：
+
+`mean(x, trim = 0, na.rm = FALSE, ...)`，其中`na.rm`是可选 argument，是一个 logiccal scalar，默认值是`FALSE`，表示运算时，`NA`不会被忽略。
+
+```{r}
+mean(c(1, 2, NA))
+mean(c(1, 2, NA), na.rm = TRUE)
+```
+
+## Evaluation {#evaluation}
+
+执行 function 的基本形式是`fun(arglist)`，但根据\@ref(argument)中的内容可以知道，每一个 argument 都有对应的 name，所以，在执行 function 的时候，匹配 argument 的方式有两种，argument name 或位置（没提供 argument name 时），例如：
+
+`matrix(data = NA, nrow = 1, ncol = 1)`
+
+```{r}
+# when the names are available, positions of argument will not affect results
+matrix(nrow = 2, data = 1, ncol = 2)
+```
+
+```{r}
+# when the names are unavailable, arguments value will be matched according to their positions
+matrix(2, 1, 2)
+```
+
+因此，在执行 function 时，建议如下：
+
+- 略写必选 argument（如数据）的 name。因为这些 arguments 的位置往往都是在最前面。省略 argument name，按顺序写它们的argument value 即可。
+- 提供可选 argument 的 name。因为这些 arguments 的位置都往往靠后，且要用的可选 argument 可能会随着具体情况而变化，不一定会按照顺序来，如果不提供 argument ，直接按照位置来匹配会容易出现匹配错误。
+
+例如：`paste (..., sep = " ", collapse = NULL, recycle0 = FALSE)`
+
+```{r comment = ""}
+paste(c(1, 2, 3), collapse = "_")
+paste(c(1, 2, 3), "_")
+```
+
+## Environment (optional)
+
+Function 在执行的时候，会生成一个该 function 专属的独立 environment，这就使得在执行时有一些需要注意的细节。
+
+- 所有在 function 内部定义的 object 都是临时局部变量，在 function 执行结束后会和该 function 专属的独立 environment 一起被“销毁”；
+
+```{r fun_env_1, error = TRUE}
+x <- 1
+my_fun <- \(y) y + 1
+my_fun(x)
+y
+```
+
+- 所有没有在 function 内部定义的 object， R 都会到上一级的 environment 里面找，没找到就再上一级，直到 Global Environment；
+```{r}
+x <- 1
+my_fun <- \() x + 1
+my_fun()
+```
+
+- 同名 objects：
+  - `function`内外部定义有同名 objects，例如`a`，执行 function 时使用的是临时局部变量`a`，且不会改变外部 environment 中`a`的值。
+  - 定义了和某 function 同名的 object，通常 R 会根据实际情况来自动区分；
+
+```{r fun_env_2}
+a <- 1
+my_fun <- function() {
+  a <- 2
+  b <- 1
+  return(a + b)
+}
+my_fun()
+a
+```
+
+```{r fun_env_3}
+my_fun <- function() {
+  mean <- c(1, 2, 3)
+  mean(mean)
+  return(mean)
+}
+my_fun()
+```
+
+上述两种同名的情况，虽然看起来不会造成什么严重的问题，但是极其容易让人混淆，请注意避免。
+
+- 在 function 内部更改上一级 environment 中 object 的 value。
+
+`<<-`
+
+```{r fun_env_4}
+a <- 1
+my_fun <- function() {
+  rnd <- runif(1)
+  print(rnd)
+  if (rnd > 0.5) a <<- 0
+  return(a)
+}
+my_fun()
+```
+
+## Be an attentive coder (optional)
+
+在定义 function 时，一个具备用户思维的码农会将各种可能的情况考虑得比较完善，并针对不同的情况给出清晰的提示。以定义一个寻找众数的 function 为例：
+
+```{r mode}
+get_mode <- function(x) {
+  fre_tab <- table(x)
+  return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
+}
+a <- sample(10, 10, TRUE)
+a
+get_mode(a)
+```
+
+通常都是从 argument 的角度考虑。
+
+1. 考虑 argument 的 structure type
+
+```{r mode_2, error = TRUE}
+get_mode <- function(x) {
+  if (is.expression(x)) stop("argument 'x' can not be an expression")
+  if (is.list(x) & !is.data.frame(x)) {
+    x <- unlist(x)
+    warning("argument 'x' is a list and has been expanded into a vector before loacting its mode")
+  }
+  if (is.data.frame(x)) x <- as.matrix(x)
+  fre_tab <- table(x)
+  return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
+}
+get_mode(expression(1, 2))
+get_mode(list(1, 2, 3))
+get_mode(data.frame(x = c(1, 2, 3), y = c(2, 3, 4)))
+```
+
+2. 考虑 argument 的 element type
+
+```{r mode_3, error = TRUE}
+get_mode <- function(x) {
+  if (is.expression(x)) stop("argument 'x' can not be an expression")
+  if (is.list(x) & !is.data.frame(x)) {
+    x <- unlist(x)
+    warning("argument 'x' is a list and has been expanded into a vector before loacting its mode")
+  }
+  if (is.data.frame(x)) x <- as.matrix(x)
+  if (!is.numeric(x) & !is.logical(x)) {
+    warning("argument 'x' is not numeric or logical: returning NA")
+    return(NA)
+  }
+  fre_tab <- table(x)
+  return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
+}
+get_mode(expression(1, 2))
+get_mode(list(1, 2, 3))
+get_mode(c("a", "a", "b"))
+```
+
+3. 考虑操作的完备性
+
+```{r mode_4, error = TRUE}
+get_mode <- function(x, margin = 0) {
+  if (is.expression(x)) stop("argument 'x' can not be an expression")
+  if (is.list(x) & !is.data.frame(x)) {
+    x <- unlist(x)
+    warning("argument 'x' is a list and has been expanded into a vector before loacting its mode")
+  }
+  if (is.data.frame(x)) x <- as.matrix(x)
+  if (!is.numeric(x) & !is.logical(x)) {
+    warning("argument 'x' is not numeric or logical: returning NA")
+    return(NA)
+  }
+  if ((margin == 1 | margin == 2) & length(dim(x)) == 2) {
+    n_mode <- ifelse(margin == 1, nrow(x), ncol(x))
+    all_modes <- vector("list", n_mode)
+    for (r in 1:n_mode) {
+      fre_tab <- table(if (margin == 1) x[r, ] else x[, r])
+      all_modes[[r]] <- as.numeric(names(fre_tab)[fre_tab == max(fre_tab)])
+    }
+    return(all_modes)
+  } else if ((margin == 1 | margin == 2) & length(dim(x)) > 2) {
+    stop("the dimensionality of argument 'x' must not exceed 2 when locating mode rowwise or colwise") 
+  } else {
+    fre_tab <- table(x)
+    return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
+  }
+}
+a <- matrix(sample(12, 15, TRUE), 3, 5)
+a
+get_mode(a, margin = 1)
+get_mode(a, margin = 2)
+a1 <- array(sample(16, 16, TRUE), c(2, 4, 2))
+get_mode(a1, margin = 1)
+```
+
+4. 减少冗余代码
+
+```{r mode_5, error = TRUE}
+mode_bytable <- function(input) {
+    fre_tab <- table(input)
+    return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
+}
+    
+get_mode <- function(x, margin = 0) {
+  if (is.expression(x)) stop("argument 'x' can not be an expression")
+  if (is.list(x)) {
+    x <- unlist(x)
+    warning("argument 'x' is a list and has been expanded into a vector before loacting its mode")
+  }
+  if (is.data.frame(x)) x <- as.matrix(x)
+  if (!is.numeric(x) & !is.logical(x)) {
+    warning("argument 'x' is not numeric or logical: returning NA")
+    return(NA)
+  }
+  if ((margin == 1 | margin == 2) & length(dim(x)) == 2) {
+    n_mode <- ifelse(margin == 1, nrow(x), ncol(x))
+    all_modes <- vector("list", n_mode)
+    for (r in 1:n_mode) {
+      all_modes[[r]] <- mode_bytable(if (margin == 1) x[r, ] else x[, r])
+    }
+  } else if ((margin == 1 | margin == 2) & length(dim(x)) > 2) {
+    stop("the dimensionality of argument 'x' must not exceed 2 when computing mode rowwise or colwise")
+  } else {
+    all_modes <- mode_bytable(x)
+  }
+  return(all_modes)
+}
+a <- matrix(sample(12, 15, TRUE), 3, 5)
+a
+get_mode(a)
+get_mode(a, margin = 1)
+```
+
+
+## Be a curious coder (optional)
+
+如果要提高编程的水平，一个重要的方式就是多读高手的代码，特别是一些包中的源码。
+
+1. 已经加载的包中的 function
+
+```{r comment = ""}
+mean # 在 Console 输出
+```
+
+使用`View(mean)`更方便。
+
+<video src="images/view_source_code.mp4" width="100%" controls="controls"></video>
+
+2. 未加载的包中的 function
+
+已经安装，但是没有加载的包中的 function，可以使用`::`来查看，例如：
+```{r}
+openxlsx::read.xlsx
+```
+
+`::`也可以用来在不加载整个包的情况下使用包中的指定 function，例如：
+```{r eval = FALSE}
+openxlsx::read.xlsx("1.xlsx")
+```
+
+更多具体的查看源码的方式可以参考：
+
+- [六种方法查看R函数源代码，为啥第三种最惹人喜欢？](https://www.jianshu.com/p/ae68ae6c68dd)
+- [How can I view the source code for a function?](https://stackoverflow.com/questions/19226816/how-can-i-view-the-source-code-for-a-function)
+- [How to read the source code of an internal R function](https://datascienceconfidential.github.io/r/2017/12/28/how-to-read-source-code-internal-r-function.html)
+
+冷知识：
+
+> To understand computations in R, two slogans are helpful:
+>
+> Everything that exists is an object.
+>
+> Everything that happens is a function call.
+>
+>  — John Chambers
+
+```{r}
+`+`
+```
+
+## Recap
+
+1. 自定义 function 基本结构是：
+```{r eval = FALSE}
+name_fun <- function(arglist) {
+  expr
+  return(value)
+} 
+```
+2. `\(arglist) expr`是`4.1.0`以上版本的 R 支持的 function 基本结构简便写法；
+3. function 的 argument 包括必选 argument 和可选 argument，可选 argument 通常都会有默认值；
+4. 使用 function 时，可以考虑略写必选 argument 的 name，而提供可选 argument 的 name；
+5. function 在执行的时候会生成一个该 function 专属的独立 environment；
+6. 尽量避免同名的情况，包括不同 environment 中的变量同名或 function 和变量同名。

@@ -1,0 +1,668 @@
+# Basic: control flow {#control-flow}
+
+到目前为止，本课程中写过的所有代码都是线性执行的，即按从头到尾的顺序执行所有语句。只使用这种单向控制流，可以编写一些非常简单的程序，这种写法可以视作是不对代码的执行顺序做任何人为的控制。
+
+简单来讲，控制流（control flow）就是控制代码的流程，通过一定方式控制代码执行的顺序。Control flow 能够极大地增加代码的功能性，是现代编程语言的经典成分，绝大多数编程语言中都有控制流的模块。
+
+Control flow 可以分为 conditional flow （条件流）和 loop （循环）两大类。
+
+（本节内所有的流程图都来自[GeeksforGeeks](https://www.geeksforgeeks.org/)）
+
+
+## Conditional flow
+
+### `if else`
+
+<img style = "display: block; margin: auto;" src="images/flow chart if else.png" width="70%"/>
+
+基本语法结构
+
+```{r eval = FALSE}
+if (cond) {
+  cons.expr
+} else {
+  alt.expr
+}
+```
+
+如果`cond`的结果是`TRUE`，执行`cons.expr`，反之则执行`alt.expr`。`cond`通常都是 relational operator 的结果，或者是`is.xxx()`类 function 的结果。`cond`的执行结果要求是长度为 1 的 logical vector，如果长度超过 1，执行时会得到一个 error，详见\@ref(complex-cond)。
+
+```{r if}
+age <- 12
+# age <- c(11, 12)
+if (age < 12) {
+  "elementary school"
+} else {
+  "middle school"
+}
+```
+
+在 Rstudio 中可以通过 Snippets 的功能快速输入`if else`结构：
+
+<video src="images/if_snippet.mp4" width="100%" controls="controls"></video>
+
+`if else` 有以下 4 种情况：
+
+#### Single `cond` without `else`
+
+<img style = "display: block; margin: auto;" src="images/flow chart if.png" width="70%"/>
+
+如果不需要`else`部分，可以简化为：
+```{r eval = FALSE}
+if (cond) {
+  expr
+}
+```
+
+当`expr`和`cond`都很简短时，可以进一步简化为：
+```{r eval = FALSE}
+if (cond) cond expr
+if (cond) cons.expr else alt.expr
+```
+
+例如：
+```{r if_short}
+input <- 1
+if (input == 1) "yes" 
+if (input == 2) "yes" else "no"
+```
+
+#### Multiple `cond`s with `else if`
+
+<img style = "display: block; margin: auto;" src="images/flow chart if multiple conds.png" width="70%"/>
+
+```{r eval = FALSE}
+if (cond1) {
+  cond1.expr
+} else if (cond2) {
+  cond2.expr
+} else if (cond3) {
+  cond3.expr
+}
+```
+
+例如：
+```{r if_elseif}
+input <- 1
+if (input == 1) {
+  "a"
+} else if (input == 2) {
+  "b"
+} else if (input == 3) {
+  "c"
+}
+```
+
+但要注意，上面这段代码，如果`input`不是`1,2,3`这 3 个互斥条件中的任意一个，执行时不会有任何的提示，这种情况属于没有考虑到所有的可能，存在漏洞，容易出问题，建议改成以下写法：
+```{r if_elseif_better, error = TRUE}
+input <- 4
+if (input == 1) {
+  "a"
+} else if (input == 2) {
+  "b"
+} else if (input == 3) {
+  "c"
+} else {
+  stop(paste("Exception encountered,", input, "does not satisfy any condition!"))
+}
+```
+
+同样，也可以通过 Snippets 快速输入`if   else if`结构：
+
+<video src="images/if_elseif_snippet.mp4" width="100%" controls="controls"></video>
+
+#### Complex `cond` {#complex-cond}
+
+`if`结构中的`cond`可以是比较复杂的关系 + 逻辑运算的结果，具体又分为两种情况：
+
+a. 结果是长度为 1 的 logical vector
+
+```{r if_complicated_cond}
+a <- 0
+if (a > -3 & a < -1 || a > 1 & a < 3) {
+  "yes"
+}
+```
+
+b. 结果是长度大于 1 的 logical vector
+
+当`cond`的结果是长度大于 1 的 logical vector，在 4.2.0 以下版本的 R 中会得到一个 warning，例如
+
+```{r eval = FALSE}
+rnd <- runif(3)
+rnd
+if (rnd > 0.95) {
+  "you are awfully lucky"
+}
+```
+
+运行结果为
+
+```{r eval = FALSE, comment = "", error = TRUE}
+[1] 0.5021010 0.8256499 0.1971661
+Warning message:
+In if (rnd > 0.95) { :
+  the condition has length > 1 and only the first element will be used
+```
+
+相同的代码在 4.2.0 及以上版本的 R 中，会得到一个 error，例如
+
+```{r eval = FALSE, comment = "", error = TRUE}
+Error in if (rnd > 0.95) { : the condition has length > 1
+```
+
+因此，如果是需要依据`expr`中所有元素的对比结果来作出最终判断，那么正确的做法是运用`all(x)`和`any(x)`，其中`x`为一个 logical vector。如果`x`中所有的值都是`TRUE`，那么`all(x)`的结果为`TRUE`，反之则是`FALSE`。如果`x`中所有的值都是`FALSE`，`any(x)`的结果才是`FALSE`，反之都是`TRUE`。
+
+```{r if_logvec_cond}
+rnd <- runif(3)
+rnd
+if (all(rnd > 0.95)) {
+  "you are awfully lucky"
+} else if (any(rnd > 0.95)) {
+  "you are lucky"
+} else {
+  "sorry, you are out of luck"
+}
+```
+
+#### Vecterized `if else`: `ifelse()`
+
+当需要针对一个 vector、matrix、array 或 data.frame 中的所有元素按照是否符合某种条件为依据统一处理时，建议使用`ifelse()`，是`if else`的向量化版本，其基本语法结构为：
+
+```{r eval = FALSE}
+ifelse(test, yes, no)
+```
+
+其中，`test`表示对某个输入 object 的所有元素的检验，检验的结果是和该 object 同样大小的一个 logical object ；`yes`是 object 的元素中检测为`TRUE`时对应的返回值；`no`是检测结果为`FALSE`时的返回值。`yes`和`no`可以是一行语句，其执行结果必须和输入的 object 同样大小；如果不是，则会触发 recycling rule,（详见\@ref(byrow-recycling)），直至满足该限制。
+
+例如：
+```{r ifelse}
+m1 <- matrix(sample(1:100, 16), 4)
+m1
+print("检查每个元素是奇数还是偶数")
+ifelse(m1 %% 2 == 0, "even", "odd")  
+# 等价于 ifelse(m1 %% 2 == 0, matrix("even", 4), matrix("odd", 4))
+print("将所有奇数变成偶数，偶数维持不变")
+ifelse(m1 %% 2 == 0, m1, m1 + 1)
+```
+
+### `switch` (optional)
+
+<img style = "display: block; margin: auto;" src="images/flow chart switch.png" width="70%"/>
+
+`switch`结构可以视作是多个`cond`的`if`结构的等价写法，其基本语法结构如下：
+```{r eval = FALSE}
+switch (object,
+  case1 = expr1,
+  case2 = expr2
+)
+```
+
+其中，`object`的不同值，对应不同的`case`，例如：
+
+```{r switch}
+input <- 1
+switch(input,
+  "1" = print("a"),
+  "2" = print("b"),
+  "3" = print("c"),
+  stop("No pre-set output for current `input`")
+)
+```
+
+`switch`结构也可以通过 Snippets 快速键入：
+
+<video src="images/switch_snippet.mp4" width="100%" controls="controls"></video>
+
+## Loop
+
+Loop 结构包括三种，`for`，`while`和`repeat`。
+
+### `for`
+
+<img style = "display: block; margin: auto;" src="images/flow chart for.png" width="70%"/>
+
+基本语法结构：
+```{r eval = FALSE}
+for(var in seq) {
+  expr
+}
+```
+
+例如：
+```{r for_basic}
+for (i in c("A", "d", "r")) {
+  print(i)  # 必须用 print 才能输出
+}
+```
+
+其中`seq`为`1:3`，表示一个长度为 3 的 vector，所有 elements 会根据位置上的先后顺序被 loop，第 1 次 loop 就把`seq`的第 1 个 element 取出来赋值给`var`，即`i`，然后执行`expr`。依次 loop 下去，直到`seq`的所有 elements 都被 loop 完毕。
+
+`for`结构也可以通过 Snippets 快速键入：
+
+<video src="images/for_snippet.mp4" width="100%" controls="controls"></video>
+
+`for`结构有以下使用技巧\\注意事项：
+
+#### `seq` can be any object
+
+```{r for_loop_over_name}
+# character
+df <- data.frame(score_last = c(100, 88, 93), score_current = c(99, 96, 77))
+for (i in names(df)) {
+  print(i)
+  print(mean(df[, i]))
+}
+```
+
+```{r for_loop_over_position}
+# numeric
+df <- data.frame(score_last = c(100, 88, 93), score_current = c(99, 96, 77))
+for (i in 1:length(df)) {
+  print(i)
+  print(mean(df[, i]))
+}
+```
+
+```{r for_loop_over_element01}
+# numeric
+df <- data.frame(score_last = c(100, 88, 93), score_current = c(99, 96, 77))
+for (i in df) {
+  print(i)
+  print(mean(i))
+}
+```
+
+```{r for_loop_over_element02}
+# numeric
+m1 <- matrix(1:16, 4, 4)
+cumsum_m1 <- 0
+for (i in m1) {
+  print(i)
+  cumsum_m1 <- cumsum_m1 + i
+}
+print(cumsum_m1)
+```
+
+```{r for_loop_over_element03}
+# numeric
+l1 <- list(1:2, "a", list(1, 2, 3))
+for (i in l1) {
+  print(i)
+}
+```
+
+#### `seq` is a fixed anonymous object within `for`
+
+`seq`的本质是一个短暂存在的`anonymous object`，随着`for`结构的开始而出现，随着`for`结构的结束而消亡。这也就意味着，如果使用一个已经存在的 object 作为`seq`，一旦`for`结构开始执行，所使用的`seq`就固定了，在`for`结构的内部改动该 object 不会改变`seq`，因为二者是两个完全不同的 objects。
+
+```{r for_seq_change_subsequently}
+vec_num <- 1:5
+for (i in vec_num) {
+  vec_num <- 100
+  cat("i =", i, "vec_num =", vec_num, "\n")
+}
+```
+
+#### Use `seq_along()`
+
+使用`seq_along()`而非`:`生成`for`结构中的`seq`。
+
+`seq_along(x)`产生一个和`x`等长的自然数序列，起点为 1，终点为`x`的长度。
+
+```{r}
+vec <- runif(3)
+seq_along(vec)
+vec <- NULL
+seq_along(vec)
+```
+
+`for`结构的常见用途是重复某个操作一定次数，并且将这些重复操作所得结果储存，例如
+```{r for_seq_length_larger_than_0_colon}
+means <- c(80, 90, 100)
+out_colon <- vector("list", length(means))
+for (i in 1:length(means)) {
+  out_colon[[i]] <- rnorm(10, means[[i]])
+}
+out_colon
+```
+
+当`length(x)`中的`x`长度大于 0 时，使用`1:length(x)`和使用`seq_along()`效果一样，
+```{r for_seq_length_larger_than_0_seqalong}
+means <- c(80, 90, 100)
+out_seqalong <- vector("list", length(means))
+for (i in seq_along(means)) {
+  out_seqalong[[i]] <- rnorm(10, means[[i]])
+}
+out_seqalong
+```
+
+但当`length(x)`中的`x`长度为 0 时，使用`1:length(x)`会有问题，
+```{r for_seq_length_equal_to_0_colon, error = TRUE}
+means <- c()
+out_seqalong <- vector("list", length(means))
+for (i in 1:length(means)) {
+  out_colon[[i]] <- rnorm(10, means[[i]])
+}
+out_colon
+```
+
+原因是在于`:`既可以生成升序自然数序列，又可以生成降序自然数序列，
+```{r eval = TRUE}
+length(c())
+1:length(c())  # equivalent to 1:0
+```
+
+但显然，当想要循环的对象长度为 0 时，应该是不循环才更符合逻辑，所以使用`seq_along()`会更符合预期，
+```{r for_seq_length_equal_to_0_seq_along}
+means <- c()
+out_seqalong <- vector("list", length(means))
+seq_along(means)
+for (i in seq_along(means)) {
+  out_seqalong[[i]] <- rnorm(10, means[[i]])
+}
+out_seqalong
+```
+
+#### `var` is a named object
+
+和`seq`不同，`var`不是一个 anonymous object，它随着`for`结构的开始而出现，但不会随着`for`结构的结束而消亡，所以有两个特点：
+
+- `var`在当次 loop 内可以更改，但是不会影响下次 loop。
+
+```{r for_var_assign_during_current_loop}
+for (i in 1:5) {
+  cat("the var used in the current loop is", i, "\n")
+  i <- i + 5
+  cat("the var now has been changed to", i, "\n")
+}
+```
+
+- `var`在`for`结构执行完毕后会储存在该`for`结构所在的 environment 里，其 value 为 `seq`的最后一个 element。
+
+```{r}
+for (i in 1:5) {
+}
+i
+```
+
+#### Use `var` as subscript
+
+使用`var`作为位置下标（subscript），用作 subsetting 的 index，可以实现遍历的效果。
+
+以实训 3-3 中的第 4 题第 1 小问为例，要求是分别计算各职业的平均击杀数，命名为“ave_kill”：
+```{r for_var_assub}
+#  前序代码
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+head(data_ori)
+data_30 <- data_ori[c(-7, -13, -15, -16)]
+data_30 <- data_30[data_30[7] >= 30, ]
+type_hero <- names(table(data_30$职业))
+ave_kill_1 <- c(mean(data_30$"总击杀"[data_30$职业 == type_hero[1]]), 
+                mean(data_30$"总击杀"[data_30$职业 == type_hero[2]]),
+                mean(data_30$"总击杀"[data_30$职业 == type_hero[3]]),
+                mean(data_30$"总击杀"[data_30$职业 == type_hero[4]]),
+                mean(data_30$"总击杀"[data_30$职业 == type_hero[5]]),
+                mean(data_30$"总击杀"[data_30$职业 == type_hero[6]]))
+# 改用 for
+ave_kill_2 <- rep(0, length(type_hero))
+for (i in 1:length(type_hero)) {
+  ave_kill_2[i] <- mean(data_30$"总击杀"[data_30$"职业" == type_hero[i]])
+}
+ave_kill_1 == ave_kill_2
+```
+
+但凡是采用这个使用技巧时，如果`for`结构里发现有语句是通过`subcript`取子集，但又没使用该`for`结构中的`var`作为下标，很有可能就是出错了。
+
+例 1：
+```{r for_subscript_mistake1, eval = FALSE}
+rm(list=ls())
+set.seed(1)
+J<-1000
+I<-30
+K<-30
+D<-1.7
+X<-matrix(NA,J,I)
+P<-matrix(NA,J,I)
+
+theta<-rnorm(J,0,1)
+b<-rnorm(I,0,1)
+theta[theta>3]<-3
+theta[theta<-3]<- -3
+b[b>3]<-3
+b[b<-3]<- -3
+
+for(j in 1:J){
+  for(i in 1:I){
+    P[j,i]<-1/(1+exp(-D*(theta[j]-b[i])))
+    r<-runif(1,0,1)
+    if(P[j,i]<r){
+      X[j,i]<-0
+    }else{
+      X[j,i]<-1
+    }
+  }
+}
+theta_k<-seq(-3,3,length.out=K)
+theta_end<-matrix(NA,J,1)
+L_k<-matrix(NA,K,1)
+
+for(j in 1:J){
+  for(k in 1:K){
+    p_k<-1/(1+exp(-D*(theta_k[k]-b)))
+    for(i in 1:I){
+      p_k[i]<-ifelse(X[j,i]==0,
+                     1-p_k[i],
+                     p_k[i])
+      L_k[k]<-prod(p_k)
+    }
+    fenzi<-sum(theta_k*L_k*((1/sqrt(2*pi))*exp(-(theta_k)^2/2)))
+    fenmu<-sum(L_k*((1/sqrt(2*pi))*exp(-(theta_k)^2/2)))
+  }
+  theta_end[j]<-fenzi/fenmu
+}
+print(mean(abs(theta_end-theta)))
+```
+
+例 2：
+<!-- 例 2：[Problem with a function applied to p-values from lm()](https://www.reddit.com/r/Rlanguage/comments/resav9/problem_with_a_function_applied_to_pvalues_from_lm/) -->
+```{r for_subscript_mistake2, eval = FALSE}
+# Hello everyone : )
+# 
+# 
+# 
+# I was trying to write a function for evaluating the p-values of the t-test of a lm model, I know is a little bit silly and probably useless but I want to practice.
+# 
+# The issue here is that it only evaluates the first variable.
+# 
+# Here is the code:
+
+#Data
+library(ISLR2)
+
+Auto = tibble(Auto)
+
+#Model
+
+lm.fit = lm(mpg ~ horsepower, data = Auto)
+
+#Function for evaluate p-values
+
+tStest = function(x) {
+  x = as.numeric(x)
+  a = rep(0,length(x))
+  for(i in seq_along(x)) {
+    if (x[i] > 0.025) {
+      a[i] = 'Accept Ho'
+    } else {
+      a = 'Reject Ho'
+    }
+  }
+  print(a)
+}
+
+pv = summary(lm.fit)$coefficients[, 4] #p-values
+
+tStest(pv) #only returns one value
+
+#But it works with a simple vector
+
+v = c(1,2,3)
+
+tStest(v)
+
+# Does anyone know where is the problem? Also I'm interested in other approaches to achieve the same objective
+# 
+# Sorry about my broken english, and thank you in advance
+```
+
+#### Initialize output object
+
+输出结果（`for`结构中每次 loop 改动的结果变量）需提前初始化。
+
+在上面的例子中，`ave_kill_2`就是`for`结构的输出结果，`ave_kill_2 <- rep(0, length(type_hero))`就是初始化，即在`for`结构开始前给`ave_kill_2`赋值，**并且大小也根据预期提前设定好**，这样`for`结构可以顺利执行，并且执行效率最高。反之，如果不提前初始化结果变量，那么在`for`结构执行时，global environment 里是没有`ave_kill_2`的，报错并终止：
+```{r for_var_preset_output, error = TRUE}
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+data_30 <- data_ori[c(-7, -13, -15, -16)]
+data_30 <- data_30[data_30[7] >= 30, ]
+type_hero <- names(table(data_30$"职业"))
+for (i in 1:length(type_hero)) {
+  ave_kill_2[i] <- mean(data_30$"总击杀"[data_30$"职业" == type_hero[i]])
+}
+```
+
+#### Alter the process of loop structure
+
+通常在 loop 结构中，会使用`if`结构来实现满足条件时改动 loop 结构的执行过程。有 2 种改动，`next`和`break`。
+
+- `next`：跳过当前 loop
+
+```{r for_next}
+for (i in 1:3) {
+  if (i == 2) next
+  print(i)
+}
+```
+
+- `break`：跳出当前 loop 结构
+
+```{r for_break}
+for (i in 1:3) {
+  if (i == 3) break
+  print(i)
+}
+```
+
+`next`和`break`适用于所有三种 loop 结构。
+
+#### When to use the `for` structure
+
+`for`结构最适合的任务情境应当是前一次 loop 和后一次 loop 有依赖关系，这种情况只有按顺序执行的 loop 结构才能够处理。不同次 loop 之间没有任何联系彼此独立时，都可以有替代`for`结构的写法。
+
+Loops 间存在联系的示例：
+```{r}
+num_ite <- 20
+a <- rep(0, num_ite)
+for (i in 1:num_ite) {
+  if (i != 1) {
+    a[i] <- a[i - 1] + i
+  }
+}
+a
+```
+
+### `while` {#while}
+
+`while`结构可以视作是`for`+`if`。
+
+<img style = "background: #fff" src="images/flow chart while.png" width="100%"/>
+
+基本语法结构：
+```{r eval = FALSE}
+while(cond) {
+  expr
+}
+```
+`while`结构执行前，当`cond`的执行结果为`TRUE`时，才会进入`while`结构，否则会直接跳过。进入`while`结构后，执行`expr`，然后会检查`cond`的执行结果是否为`TRUE`，是则继续下一次 loop，否则跳出`while`结构。
+
+在使用`while`结构的时候要注意，一定要确保在`expr`中，`cond`会被更改，并酌情设定退出机制，否则非常容易陷入 forever loop。
+
+```{r dead_while, eval = FALSE}
+# forever loop
+i <- 1
+while (i <= 5) {
+  print(i)
+}
+```
+
+
+```{r while}
+# make sure:
+#   1. cond is modified within each loop
+#   2. loop can always be jumped out of
+set.seed(123)
+rnd_unif <- runif(1, -1, 1)
+cum_sum_rnd_unif <- 0
+count <- 1
+while (cum_sum_rnd_unif <= 1) {
+  cum_sum_rnd_unif <- cum_sum_rnd_unif + rnd_unif
+  print(cum_sum_rnd_unif)
+  count <- count + 1
+  if (count > 20) break
+}
+print(count)
+```
+
+`while`结构也可以通过 Snippets 快速键入：
+
+<video src="images/while_snippet.mp4" width="100%" controls="controls"></video>
+
+### `repeat`
+
+`repeat`结构同样也可以视作是`for`+`if`。
+
+<img style = "display: block; margin: auto;" src="images/flow chart repeat.jpg" width="70%"/>
+
+基本语法结构：
+```{r eval = FALSE}
+repeat {
+  expr
+}
+```
+
+在使用`repeat`结构的时候要注意，一定要确保`expr`中有带`break`的`if`结构，保证不会陷入 forever loop：
+```{r repeat}
+i <- 1
+repeat {
+  print(i)
+  i <- i + 1
+  if (i > 5) {
+    break
+  }
+}
+```
+
+考虑到`while`和`repeat`结构在不够谨慎的情况下都有陷入 forever loop 的风险，而二者的本质作用都是 执行多次 loop，和`for`结构并无差异，因此，在绝大多数情况下都建议使用`for`结构。
+
+例如前文展示在使用`while`结构时避免 forever loop 的代码完全可以用如下`for`结构替代：
+```{r while_to_for}
+set.seed(123)
+rnd_unif <- runif(1, -1, 1)
+cum_sum_rnd_unif <- 0
+n_loop <- 20
+for (i in 1:n_loop) {
+  cum_sum_rnd_unif <- cum_sum_rnd_unif + rnd_unif
+  print(cum_sum_rnd_unif)
+}
+```
+
+## Recap
+
+1. 不论是使用`if`结构还是`switch`结构，在构建包含多个互斥`cond`s 的结构时都需要将所有的情况都考虑到；
+2. `if`结构中，`cond`为 logical vector 时，根据需要运用`all()`（相当于`&`）和`any()`（相当于`|`）；
+3. `ifelse()`适用于快速检验 vector、matrix、array、data.frame 中的所有 elements，是`if else`的向量化写法；
+4. `for`结构中，输出结果需初始化；
+5. loop 结构中，`next`跳过当前 loop，`break`跳出整个 loop 结构；
+6. 必须要使用 loop 结构时，尽量使用`for`结构。
