@@ -132,6 +132,8 @@ sapply(3:9, seq)
 
 ## The basic usage of `lapply()` and `sapply()`
 
+因为`lapply()`和`sapply()`本质上是用简单的写法解决需要多次重复相同操作的问题，所以使用思路上和`for`中的`seq`很类似，
+
 1. 循环`element`
 
 ```{r lapply_loop_data}
@@ -146,7 +148,17 @@ lapply(scores, mean)
 
 2. 循环`subscript`
 
-```{r lapply_loop_subscript}
+```{r lapply_loop_subscript_name}
+set.seed(123)
+scores <- list(
+  class_1 = sample(100, 32, replace = TRUE),
+  class_2 = sample(100, 36, replace = TRUE),
+  class_3 = sample(100, 30, replace = TRUE)
+)
+lapply(names(scores), \(x) mean(scores[[x]]))
+```
+
+```{r lapply_loop_subscript_location}
 set.seed(123)
 scores <- list(
   class_1 = sample(100, 32, replace = TRUE),
