@@ -337,6 +337,21 @@ df_select <- df[names(df) %in% vars]
 df_select
 ```
 
+
+`%in%`对于匹配的定义比`==`考虑的更完备，对一些特殊的匹配情况做了处理，如`NA`，只有匹配`NA`时才会返回`TRUE`的结果，否则返回`FALSE`，
+```{r in_na}
+c(1, NA, 3) %in% c(1:10)
+c(1, NA, 3) %in% NA # equivalent to is.na(c(1, NA, 3))
+```
+
+正是因为`%in%`考虑更加完备，故`%in%`可以替代`==`，用在 subsetting 上，
+```{r in_subsetting}
+df <- data.frame(x = c(1, NA, 1, 2, 4), y = c(2, 1, 1, 3, 5))
+df$x == 1
+df[df$x == 1 & df$y == 1, ]
+df[df$x %in% 1 & df$y %in% 1, ]
+```
+
 ### Sort
 
 - `sort(x, decreasing = FALSE)`，将`x`升序排列（默认），输出排列后的`x`。`decreasing`是可选 argument。`decreasing = TRUE`则是按照降序排序列。
