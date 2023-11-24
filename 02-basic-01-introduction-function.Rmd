@@ -18,5 +18,5 @@ tighten_screw(position = c(0, 0), type = "cross")
 
 ## Recap
 
-1. 在`R`中，只要看到英文小括号，就知道是使用了`function`，使用`function`时，`function`的名称之后必须紧跟`()`；
-2. 使用`function`时，如果有多个`argument`，必须使用英文逗号`,`隔开，最后一个`argument`后不需要`,`。
+1. 在 R 中，绝大多数情况下只要看到英文小括号且括号前有内容，就知道是在调用 function，调用 function 时，function 的名称之后必须紧跟`()`；
+2. 调用 function 时，如果有多个 argument，必须使用英文逗号`,`隔开，最后一个 argument 后不需要`,`。

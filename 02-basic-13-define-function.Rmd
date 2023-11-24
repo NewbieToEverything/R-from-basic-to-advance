@@ -319,8 +319,8 @@ get_mode(a1, margin = 1)
 
 ```{r mode_5, error = TRUE}
 mode_bytable <- function(input) {
-    fre_tab <- table(input)
-    return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
+  fre_tab <- table(input)
+  return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
 }
     
 get_mode <- function(x, margin = 0) {
