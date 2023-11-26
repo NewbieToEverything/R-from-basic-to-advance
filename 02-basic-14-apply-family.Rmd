@@ -54,11 +54,10 @@ col_sd <- function(df) {
 }
 ```
 
-但实际上可以看出来，上面 3 个自定义函数只有第 4 行才是不一样的，其他都是完全相同的，也就意味着这 3 个函数完全可以合并成 1 个，只不过需要将不同的部分变成一个 argument，
+但实际上可以看出来，上面 3 个自定义函数只有第 4 行才是不一样的，其他都是完全相同的，也就意味着这 3 个函数完全可以合并成 1 个，只不过需要将不同的部分变成一个 argument：
 ```{r fun_as_arg}
 col_summary <- function(df, fun) {
   out <- vector("double", length(df))
-  # print(fun)
   for (i in seq_along(df)) {
     out[i] <- fun(df[[i]])
   }
@@ -67,6 +66,19 @@ col_summary <- function(df, fun) {
 col_summary(df, mean)
 col_summary(df, median)
 col_summary(df, sd)
+```
+
+在 define function 章节讲过，`arglist`部分相当于创建一个只存在于 function 内部的 object。当使用 function 作为调用 function 的 argument 时，`arglist`部分相当于创建了一个仅存在于被调用 function 内部的 function object：
+```{r fun_as_arg_object_view}
+col_summary <- function(df, fun) {
+  print(fun)
+  out <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    out[i] <- fun(df[[i]])
+  }
+  return(out)
+}
+results <- col_summary(df, mean)  # effectively create a function object "fun" whose value is the function body of mean()
 ```
 
 
