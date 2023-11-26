@@ -557,7 +557,46 @@ for (i in 1:3) {
 
 `next`和`break`适用于所有三种 loop 结构。
 
-#### When to use the `for` structure
+
+#### The recommended way of using `for`
+
+`for`适合于多次重复相同的操作，这也就意味着写`for` 结构之前必须想清楚，需要重复的究竟是哪些操作，即`for`结构中`expr`到底要写什么，否则就会出现额外多写代码或整个代码结构不够简洁的问题：
+```{r for_recommended_usage}
+# column-wise centering
+n_stu <- 30
+df <- data.frame(
+  math = sample(1:150, n_stu, replace = TRUE),
+  chinese = sample(1:150, n_stu, replace = TRUE),
+  english = sample(1:150, n_stu, replace = TRUE),
+  history = sample(1:100, n_stu, replace = TRUE),
+  geography = sample(1:100, n_stu, replace = TRUE),
+  politics = sample(1:100, n_stu, replace = TRUE)
+)
+
+# calculate mean then subtract mean from raw data
+n_col <- ncol(df)
+mean_col <- vector(mode = "numeric", length = n_col)
+for (r in 1:n_col) {
+  mean_col[r] <- mean(df[[r]])
+}
+
+df_centered_verbose <- df
+for (r in 1:n_col) {
+  df_centered_verbose[[r]] <- df[[r]] - mean_col[r]
+}
+
+# more compact
+df_centered_compact <- df
+for (r in 1:n_col) {
+  mean_col <- mean(df[[r]])
+  df_centered_compact[[r]] <- df[[r]] - mean_col
+}
+
+identical(df_centered_verbose, df_centered_compact)
+```
+
+
+#### The best scenario to use `for`
 
 `for`结构最适合的任务情境应当是前一次 loop 和后一次 loop 有依赖关系，这种情况只有按顺序执行的 loop 结构才能够处理。不同次 loop 之间没有任何联系彼此独立时，都可以有替代`for`结构的写法。
 
@@ -657,6 +696,7 @@ for (i in 1:n_loop) {
   print(cum_sum_rnd_unif)
 }
 ```
+
 
 ## Recap
 
