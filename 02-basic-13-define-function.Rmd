@@ -11,7 +11,7 @@
 function(arglist) {
   expr
   return(value)
-} 
+}
 ```
 
 例如`which()`：
@@ -19,7 +19,7 @@ function(arglist) {
 which
 ```
 
-如果是定义 function，则基本结构保持不变，用`<-`给定义的 function 取个名字即可，
+如果是 define function，则基本结构保持不变，用`<-`给 defined function 取个名字即可，
 
 ```{r eval = FALSE}
 name_fun <- function(arglist) {
@@ -30,7 +30,7 @@ name_fun <- function(arglist) {
 
 例如：
 ```{r eval = FALSE}
-mean_byme <- function (x) {
+mean_byme <- function(x) {
   mean_x <- sum(x)/length(x)
   return(mean_x)
 }
@@ -42,9 +42,18 @@ function 也是 R 中的一种 object，同样是遵循`x <- value`的基本语�
 
 <video src="images/fun_snippet.mp4" width="100%" controls="controls"></video>
 
-前面讲到，只要把`x <- value`的代码执行，就会把产生的 object 存到 environment 里去。同样的，只要把定义 function 的所有代码从上到下逐行执行，就会把产生的 function object 存到 environment 里去，然后就可以和正常的 function 一样调用了。
+前面讲到，只要把`x <- value`的代码执行，就会把产生的 object 存到 environment 里去。同样的，只要把 define function 的所有代码从上到下逐行执行，就会把创建的 function object 存到 environment 里去，然后就可以和正常的 function 一样调用了。
 
 <video src="images/fun_eval.mp4" width="100%" controls="controls"></video>
+
+在调用 function 的时候，可以将`arglist`部分视作赋值，赋值的结果是创建了一个只存在于 function 内部的 object：
+```{r function_assign_argument}
+toy_fun <- function(arg1) {
+  print(arg1)
+  return(NULL)
+}
+obj_tmp <- toy_fun(arg1 = c(1, 2, 3)) # create an temporary object named "arg1" with value = c(1, 2, 3)
+```
 
 ## A few caveats
 
@@ -66,13 +75,13 @@ test
 ```{r return_last_evaluation}
 mean_byme_with_return <- function(x) {
   mean_x <- sum(x)/length(x)
+  return(mean_x)
 }
 test <- mean_byme_with_return(c(1, 2, 3))
 test
 # 等价于
 mean_byme_without_return <- function(x) {
   mean_x <- sum(x)/length(x)
-  return(mean_x)
 }
 test <- mean_byme_without_return(c(1, 2, 3))
 test
