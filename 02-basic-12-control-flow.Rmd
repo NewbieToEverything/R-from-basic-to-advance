@@ -560,7 +560,7 @@ for (i in 1:3) {
 
 #### The recommended way of using `for`
 
-`for`适合于多次重复相同的操作，这也就意味着写`for` 结构之前必须想清楚，需要重复的究竟是哪些操作，即`for`结构中`expr`到底要写什么，否则就会出现额外多写代码或整个代码结构不够简洁的问题：
+`for`适合于多次重复相同的操作，这也就意味着写`for` 结构之前必须想清楚，需要重复的操作究竟有哪些，即`for`结构中`expr`到底要写什么，否则就会出现额外多写代码、整个代码结构不简洁的情况，
 ```{r for_recommended_usage}
 # column-wise centering
 n_stu <- 30

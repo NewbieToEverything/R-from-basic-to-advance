@@ -46,13 +46,14 @@ function 也是 R 中的一种 object，同样是遵循`x <- value`的基本语�
 
 <video src="images/fun_eval.mp4" width="100%" controls="controls"></video>
 
-在调用 function 的时候，可以将`arglist`部分视作赋值，赋值的结果是创建了一个只存在于 function 内部的 object：
+在调用 function 的时候，可以将`arglist`部分视作执行了赋值的操作，赋值的结果是创建了一个只存在于 function 内部的 object，该 object 的 name 为 function 作者提供的 argument name，value 为 function 的调用者提供的 argument value：
 ```{r function_assign_argument}
 toy_fun <- function(arg1) {
   print(arg1)
   return(NULL)
 }
-obj_tmp <- toy_fun(arg1 = c(1, 2, 3)) # create an temporary object named "arg1" with value = c(1, 2, 3)
+obj_tmp <- toy_fun(arg1 = c(1, 2, 3)) 
+# when using toy_fun, an temporary object named "arg1" with value = c(1, 2, 3) is created
 ```
 
 ## A few caveats

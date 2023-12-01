@@ -68,7 +68,7 @@ col_summary(df, median)
 col_summary(df, sd)
 ```
 
-在 define function 章节讲过，`arglist`部分相当于创建一个只存在于 function 内部的 object。当使用 function 作为调用 function 的 argument 时，`arglist`部分相当于创建了一个仅存在于被调用 function 内部的 function object：
+在 define function 章节讲过，当调用一个 function 时，其`arglist`部分相当于创建了一个只存在于该 function 内部的 object。当把另一个 function 作为`arglist`中的某个 argument 时，`arglist`部分相当于创建了一个只存在于被调用的 function 内部的 function object。所以，调用 function 时，argument 不论是用常见的 object (vector, data.frame, matrix, etc.) 还是用 function object，本质上是一回事，都是在 function 内部创建了一个 temporary object，随着 function 运行开始而出现，随着 function 运行结束和消失：
 ```{r fun_as_arg_object_view}
 col_summary <- function(df, fun) {
   print(fun)
