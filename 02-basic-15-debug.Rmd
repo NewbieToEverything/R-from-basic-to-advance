@@ -14,7 +14,7 @@ Reference:
 2. [Debugging in Advanced R 2nd edition](https://adv-r.hadley.nz/debugging.html)
 
 
-## Different types of bug
+## Two types of bug: obvious one and invisible one
 
 1. 显性（相对简单）
 
@@ -33,13 +33,15 @@ for (i in 1:length(a)) {
 b
 ```
 
+要想发现隐性 bug，前提是必须对代码的执行结果有清晰的预期，否则连代码有 bug 都无法觉察，更不用提如何 debug 了。例如，上述例子中就需要用户能够清楚地知道执行结果是`1+2+3=6`，所以`b`为`5`的执行结果显然是不符合预期的，故推断出来有隐性 bug。
+
 
 ## Three steps of debugging
 
 通常 debug 可以包含以下三步：
 
 1. 运行代码
-2. 在出错的地方停下来
+2. 在 bug 的前一行停下来
 3. 找到问题的根源
 
 其中，2、3 步是 debug 的核心技巧，也常常一起运用。
@@ -47,11 +49,11 @@ b
 此外，在 debug 前，**切记先把代码保存至本地**。Rstudio 的 debug 模式对于新建但未保存的代码文件（untitled）并不友好。
 
 
-### Step1: source your R script
+### Step 1: Source your R script
 
 Source (Ctrl+Shift+S)：读取并执行当前活动文档中的所有代码。
 
-相比 run current line or selection (Ctrl+Enter)，source 才是 debug 的正确姿势。因为 Run current line or selection 有 3 个缺点：
+相比 run current line or selection (Ctrl+Enter)，Source 才是 debug 的正确姿势。因为 Run current line or selection 有 3 个缺点：
 
 1. Run current line or selection 会在 console 输出执行了什么代码以及对应的结果（如果有的话），容易造成 console 信息冗杂，并且容易搞错代码执行顺序；
 
@@ -62,28 +64,41 @@ Source (Ctrl+Shift+S)：读取并执行当前活动文档中的所有代码。
 搞错代码执行顺序：
 <video src="images/debug run current line wrong sequence.mp4" width="100%" controls="controls"></video>
 
-使用 source 完美避免：
+使用 Source 完美避免：
 <video src="images/debug source.mp4" width="100%" controls="controls"></video>
 
-2. 只有使用 source，遇到`Error`才会触发 Rstudio 的自动呈现`trackback()`信息功能（详见\@ref(linear-process)）；
-3. 只有使用 source 进入 debug 模式才会激活 Rstudio 的 debug toolbar（详见\@ref(nonlinear-process)）。
+2. 只有使用 Source，遇到`Error`才会触发 Rstudio 的自动呈现`trackback()`信息功能（详见\@ref(Step-3-of-de-obvious-bug-outside-function-and-control-flow)）；
+3. 只有使用 Source 进入 debug 模式才会激活 Rstudio 的 debug toolbar（详见\@ref(When-bug-is-in-either-function-or-control-flow)）。
 
-所以，在 debug 时，建议一律使用 source。
+所以，在 debug 时，第一步就是 Source。
 
-### Step 2 and step 3
+### Step 2: stop the code just before the occurrence of bug and step 3: locate the malady
 
 当代码中存在 bug 时，不论是显性 bug 还是隐性 bug，debug 时都需要在出错的地方停下来。更准确地说，应该是让 R 运行完 bug 所在行代码的上一行就要停下来，这样就可以查看在 bug 发生的前一刻到底发生了什么，才能最终找到问题的根源。
 
-根据执行流程可以将代码分成两种情况，线性流程（linear process），非线性流程（nonlinear process，含有自己 defined function 或 control flow）。这两种情况下的第二步有些许不同。
+根据 bug 的位置不同可以将 bug 分成两种情况：
 
-#### Linear process {#linear-process}
+- bug 既不在 function 内部 也不在 control flow 里：
+- bug 在 function 内部 或 control flow 里。
 
-1. 显性 bug 的第二步：在出错的地方停下来
+之所以要区分这两种情况，是因为 R 在执行时会将代码中所有调用的 function 和 control flow 视作是整体来运行。一旦在这些部分部存在 bug，是无法在这些部分执行的过程中停下来，也就无法查看到底是什么引发了 bug。
 
-在使用 source 或 Ctrl+A 然后 Ctrl+Enter 的方式运行线性流程的代码时，如果是显性 bug，Rstudio 会自动终止运行的代码，此时需要结合`Error`的信息定位 bug 的代码到底在哪一行。有两种基本方式：
+## When bug is neither in function nor in control flow
+
+### Obvious bug
+
+#### Step 2 of de-obvious-bug outside function and control flow
+
+在使用 Source 的方式运行代码后（debug 的第一步），如果是显性 bug，R 会自动终止运行的代码，相当于自动完成了 debug 的第二步—— bug 所在行因为有 bug 所以没有运行成功，而此行之前的所有代码都顺利运行了，本质上就是在 bug 发生前夕停了下来。就只剩下第三步了——找到问题的根源。
+
+#### Step 3 of de-obvious-bug outside a function and control flow{#Step-3-of-de-obvious-bug-outside-function-and-control-flow}
+
+1. 定位 bug
+
+虽然第二步已经自动完成了，但要执行第三步的前提是要知道 bug 到底在哪一行代码里，此时需要结合`Error`的信息定位 bug。有两种基本方式：
 
   - 目测 + 搜索。当`Error`出在自己写的代码中，幸运的情况下，可以根据`Error`的提示，轻松找出 bug 的位置，但有时则需要使用 Ctrl+F 唤出代码编辑窗口内的搜索框，然后搜索`Error`标出的问题代码，来最终定位触发 bug 的代码所在行；
-  - `traceback()`。使用 source 的方式运行代码时，Rstudio 会自动捕捉`Error`并呈现`traceback()`的结果，里面可能会有关于 bug 在哪里的信息。`traceback()`会在 console 展示引发最近一次`Error`的 functions 序列（默认倒序），即`Error`所在行的代码运行过程中使用到的所有 functions，第一个使用的 function 出现在最下面，引发`Error`的 function 在最上面；
+  - `traceback()`。使用 Source 的方式运行代码时，Rstudio 会自动捕捉`Error`并呈现`traceback()`的结果，里面可能会有关于 bug 在哪里的信息。`traceback()`会在 console 展示引发最近一次`Error`的 functions 序列（默认倒序），即`Error`所在行的代码运行过程中使用到的所有 functions，第一个使用的 function 出现在最下面，引发`Error`的 function 在最上面；
 
 <video src="images/debug traceback.mp4" width="100%" controls="controls"></video>
 
@@ -105,7 +120,7 @@ Source (Ctrl+Shift+S)：读取并执行当前活动文档中的所有代码。
 
 <img style = "display: block; margin: auto;" src="images/debug traceback function stack own code.png" width="100%"/>
 
-- `traceback()`给出的只是一个相对粗略的 bug 定位，但如果 bug 是在代码中使用的某个 function 里，`traceback()`的指向会十分模糊，此时就需通过进入 debug 模式才能定位 bug（详见\@ref(nonlinear-process)）；
+- `traceback()`给出的信息可能不会那么直接；
 
 <img style = "display: block; margin: auto;" src="images/debug traceback failure.png" width="100%"/>
 
@@ -113,41 +128,72 @@ Source (Ctrl+Shift+S)：读取并执行当前活动文档中的所有代码。
 
 <img style = "display: block; margin: auto;" src="images/debug run current line no auto-traceback.png" width="100%"/>
 
+如果`Error`和`traceback()`提供的信息不够清晰，无法定位 bug 所在行，那么可以采用以下两种形式：
 
-2. 显性 bug 的第三步：找到问题的根源（**关键**）
+- 运用分半代码并运行的方式不断缩小范围直到定位 bug 所在行；
 
-当将 bug 定位到具体某一行（称之为**起点行**）后，就需要确定引发 bug 的根源。知道为什么会有 bug，才能想出解决 bug 的方案。
+```{r split_code_into_chunks, eval = FALSE, error = TRUE}
+scores <- read.fwf(file = "F:/Nutstore backup/R/codes/RBA/data/6.1 final data.txt", 
+                   skip = 5, width = c(3, 14, 5, 9, 9, 10, 11),
+                   col.names = c("name", "date_of_birth", "class", 
+                                 "score_last", "score_current", 
+                                 "rank_last", "rank_current"), 
+                   fileEncoding = "UTF-8")
+head(scores)
+rank_change <- scores$rank_currant - scores$rank_last
+scores <- cbind(scores, rank_change)
+scores <- cbind(scores, 
+                c_last = scores$score_last - mean(scores$score_last), 
+                c_current = scores$score_current - mean(scores$score_current))
+head(scores)
+test1 <- data.frame(name = scores$name, 
+                    date_of_birth = scores$date_of_birth, 
+                    class = scores$class, 
+                    score_last = scores$score_last, 
+                    rank_last = scores$rank_last, 
+                    c_last = scores$c_last)
+head(test1)
+```
 
-精准定位的核心是“break it down into small parts”，大体可分为以下两个子步骤：
+上述代码 Source 后的结果如下：
 
-a. 分别检查**起点行**中所有可以查看的独立部分，确定到底是哪一个部分引发了 bug；
-b. 如果问题的根源并不是这部分代码，则需要以倒序的方式，检查涉及该部分代码所操作的 object 的所有前序代码（同样也是分别检查所有可以查看的独立部分），看问题到底出在哪。
+<img style = "display: block; margin: auto;" src="images/debug split code into chunks.png" alt="" width="80%"/>
 
-找到并解决 bug 最关键的便是上述第二步和第三步。
+`Error`并未直接指向代码中具体哪一行。可以将上述 20 行代码分为前 10 行和后 10 行，先运行前 10 行，如果报错就说明 bug 在前 10 行，反之则 bug 在后 10 行。然后再把报错的这一半再次切半并按顺序运行。不断重复下去就一定能定位到 bug 所在行。
+
+- 进入 debug 模式使用 Rstudio 提供的“Step into the current function call”按钮（详见\@ref(Step-2-of-de-invisible-bug-inside-function-or-control-flow)）。
+
+2. 定位 bug 的原因（**关键**）
+
+当将 bug 定位到具体某一行（称之为**起点行**）后，就需要确定引发 bug 的根源。知道为什么会有 bug，才能想出解决 bug 的方案。这一步的核心操作是**break it down into small parts**，大体可分为以下两个子步骤：
+
+a. 分别检查**起点行**中所有可以查看的独立部分，并确定到底是哪一个独立部分中的哪一个 object 引发了`bug`；
+b. 如果问题的根源并不在该 object 里，则需要以倒序的方式，检查涉及到该 object 的所有前序代码（同样也是分别检查所有可以查看的独立部分），看问题到底出在哪。
 
 <video src="images/debug solve bug.mp4" width="100%" controls="controls"></video>
 
-3. 隐性 bug 的第二步和第三步
+### Invisible bug
 
-相比于会自动实现第二步的显性 bug，隐性 bug 无法自动停止，所以需要根据出问题的 object（如和预期结果不同）倒推 bug 可能的位置和原因，使用的技术还是和显性 bug 一样，只不过更难。
+相比于会自动实现第二步的显性 bug，隐性 bug 无法通过 Source 自动停止，所以需要用户先自行感知到代码里有隐性 bug，再尝试定位 bug。这个过程中使用的技术还是和显性 bug 一样，只不过会更难。
 
 <video src="images/debug implicit bug.mp4" width="100%" controls="controls"></video>
 
-#### Nonlinear process {#nonlinear-process}
 
-非线性流程指的是包含了自己 defined function （包括`apply()`函数族）或 control flow （如 loop structure）的代码。这种类型的代码和线性流程代码不同，因为 R 在执行时会将代码中的 defined function 和 control flow 部分视作是一个整体。一旦在这些部分部存在 bug 如`Error`时， R 虽然也会终止运行代码，但此时的`Error`信息并不足以让我们搞清楚到底问题在哪，特别是 defined function。所以就需要通过进入 debug 模式的方式实现第二步，在出错的地方地方停下来。
+## When bug is in either function or control flow{#When-bug-is-in-either-function-or-control-flow}
 
-1. 隐性 bug 的第二步：在出错的地方停下来
+当 bug 在 function 内部或 control flow 里时，只有进入 debug 模式才能够将被视作是整体来执行的 function 或 control flow 暂停下来。此时不管是显性 bug 还是隐性 bug，暂停代码的方式都是使用 debug 模式，其余操作都一样，只不过隐性 bug 会更难处理，所以本小节只讲隐性 bug。
 
-`Error`类的显性 bug 同样也可以通过`traceback()`或搜索的方式来实现，就不再展示。重点讲解非线性流程中的隐性 bug。不同于显性 bug，隐性 bug 无法通过`traceback()`来定位，因为它并不会报`Error`。
+### Invisible bug
+
+#### Step 2 of de-invisible-bug inside function or control flow{#Step-2-of-de-invisible-bug-inside-function-or-control-flow}
+
+不同于显性 bug，隐性 bug 无法通过`traceback()`来定位，因为它并不会报`Error`。
 
 <img style = "display: block; margin: auto;" src="images/debug implicit bug.png" width="100%"/>
 
-容易看出，隐性 bug 是不会自己在出错的地方停下来，需要用户自己来决定在哪里停下来。而在哪里停下来实际上也就是寻找问题根源的过程，所以针对隐性 bug，第二步和第三步是合在一起的。
+容易看出，隐性 bug 是不会自己在出错的地方停下来，需要用户自己来决定在哪里停下来，而知道在哪里停下来其实也就是寻找问题根源的过程，所以针对隐性 bug，debug 的第二步和第三步并没有特别清晰的界限。
 
-2. 隐性 bug 的第二步：找到问题的根源（**关键**）
-
-通过在代码中键入`browser()`，保存并 source 即可进入 debug 模式。进入 debug 模式后，代码编辑窗口显示如下：
+对于隐性 bug 而言，debug 的第二步是通过进入 debug 模式来实现的，方式是在代码中键入`browser()`，保存并 Source 即可进入 debug 模式。进入 debug 模式后，代码编辑窗口显示如下：
 
 <img style = "display: block; margin: auto;" src="images/debug browser 1.png" width="100%"/>
 
@@ -177,7 +223,7 @@ Console 窗口显示如下：
 - (Shift + F5 或 `c`+ Enter) Continue execution until the next breakpoint is encountered
 - (Shift + F8 或 `Q`+ Enter) Exit debug mode
 
-**请注意，以上交互按钮只有使用 source 时才会出现！**
+**请注意，以上交互按钮只有使用 Source 时才会出现！**
 
 <img src="images/debug icon next.png" alt="next" height="25"/><img src="images/debug icon cf.png" alt="continue function or loop" height="25"/><img src="images/debug icon c.png" alt="continue" height="25"/>的演示：
 
@@ -187,28 +233,31 @@ Console 窗口显示如下：
 
 <video src="images/debug buttons 2.mp4" width="100%" controls="controls"></video>
 
-Debug 模式实际上就是用来暂停非线性流程的一种手段。进入 debug 模式以后，才能方便地使用前面介绍的两个子步骤来精准定位并解决 defined
-function 或 control flow 内部的隐性 bug。例如：
+如果完全不知道 bug 的精确或粗略位置，在实施 debug 的第二步时可以直接把`browser()`放在代码首行；如果对于 bug 的位置有初步的判断，在实施 debug 的第二步时就可以把`browser()`放在该位置之前，这样进入 debug 模式的时候，自然就是在 bug 发生前夕停下来。
+
+#### Step 3 of de-invisible-bug inside function or control flow
+
+Debug 模式实际上就是用来暂停 function 或 control flow 的一种手段。进入 debug 模式以后，才能实施 debug 的第三步并解决 function 或 control flow 内部的隐性 bug。例如：
 
 <video src="images/debug a complete example.mp4" width="100%" controls="controls"></video>
 
 除了手动在代码中插入`browser()`之外，Rstudio 还提供 breakpoint 功能，在代码编辑窗口的行数左侧单击即可。但不推荐这么用，因为在某些场景下，breakpoint 会失效，并不如`browser()`稳定，而且更重要的是，不如`browser()`灵活（详见\@ref(browser-tips)）。
 
-### `browser()` tips {#browser-tips}
+## `browser()` tips {#browser-tips}
 
-#### Only use `browser()` in nonlinear process
+### Always place `browser()` inside a function
 
-如果把`browser()`放在线性代码中，next（F10）会直接把`browser()`后续的所有非 control flow 的代码全部运行完，但在 function 内部就会一行一行运行。
-
-- 纯线性流程代码，next（F10）形同虚设。
+如果`browser()`不在 function 内部，进入 debug 模式后，next（F10）会直接把`browser()`后续的所有非 control flow 的代码全部运行完：
 
 <video src="images/debug browser in linear code.mp4" width="100%" controls="controls"></video>
 
-- 含有 control flow 的线性流程代码，next（F10）只对 control flow 起作用。
+next（F10）只对 control flow 起作用：
 
 <video src="images/debug browser in linear code stop inside control flow.mp4" width="100%" controls="controls"></video>
 
-#### Conditional `browser()`
+但如果`browser()`在 function 内部，调用该 function 时才会进入 debug 模式，此时就会可以一行一行地运行该 function 内部所有位于`browser()`以下的代码。所以，通过`browser()`进入 debug 模式来暂停代码的方式，其设计的初衷就是为了方便用户去解决存在于 function 或 control flow 中的 bug。除此之外，所有既不在 function 又不在 control flow 里的 bug，用户都可以通过手动逐行运行代码的方式实现对代码的绝对控制，完全可以精确地在 bug 出现前夕停下来，也就不需要进入 debug 模式了。换言之，`browser()`是 define function 时 debug 的利器。
+
+### Conditional `browser()`
 
 `browser()`本身是一个 function，所以可以和`print()`或`cat()`以及`if`结构搭配使用，实现在指定条件下触发 debug 模式的效果。
 
@@ -225,12 +274,13 @@ for (i in 1:nrow(x)) {
 
 <video src="images/debug a complete example 2 conditional debug.mp4" width="100%" controls="controls"></video>
 
-### `View()` tips
 
-通过以上的学习可以发现，debug 的一个关键环节就是**查看有问题代码的各个独立部分**。查看方式有两种：
+## `View()` tips
 
-1. 将这些独立部分的代码复制到 console 执行，适合查看执行**结果较为简短**的代码；
-2. 还有一种就是通过`View()`在代码编辑窗口查看，适合查看执行**结果较庞杂**的代码。
+debug 的第三步中**break it down into small parts**，即将某行代码分解成更小的独立部分然后分别查看，是整个 debug 过程的核心操作。查看方式有两种：
+
+1. 将这些更小部分的代码复制到 console 并执行，适合查看**执行结果较为简短**的代码；
+2. 通过`View()`在代码编辑窗口查看，适合查看**执行结果较庞杂**的代码。
 
 所有能正常执行的代码都可以通过`View()`查看，所以相比于在 console 中查看，`View()`是更加普适的方法。
 
@@ -354,7 +404,7 @@ mean(l1$X)
 
 ## Recap
 
-1. debug 一律用 source；
+1. debug 一律用 Source；
 2. 进入 debug 模式一律用`browser()`，请勿使用 Return with Debug；
 3. 隐性 bug 如果无法准确定位，可能需要从首行代码开始逐行排除；
 4. debug 最重要的技巧是在定位引发 bug 的代码后将其拆分成独立的部分，分别查看；
