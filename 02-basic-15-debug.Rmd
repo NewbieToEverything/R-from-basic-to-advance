@@ -78,8 +78,8 @@ Source (Ctrl+Shift+S)：读取并执行当前活动文档中的所有代码。
 
 根据 bug 的位置不同可以将 bug 分成两种情况：
 
-- bug 既不在 function 内部 也不在 control flow 里：
-- bug 在 function 内部 或 control flow 里。
+- bug 既不在 function 内部也不在 control flow 里：
+- bug 在 function 内部或 control flow 里。
 
 之所以要区分这两种情况，是因为 R 在执行时会将代码中所有调用的 function 和 control flow 视作是整体来运行。一旦在这些部分部存在 bug，是无法在这些部分执行的过程中停下来，也就无法查看到底是什么引发了 bug。
 
