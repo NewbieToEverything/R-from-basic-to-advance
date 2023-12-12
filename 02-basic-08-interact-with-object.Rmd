@@ -1,4 +1,4 @@
-# Basic: interact with object {#interact-object}
+# Basic: interact with object {-}
 
 通过`x <- value`的基本语句结构，创建了一个名叫`x`的 object，它的值是`value`。那么接下来就是如何与这个 object 互动，来实现我们想要的操作。
 
