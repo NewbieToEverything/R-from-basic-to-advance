@@ -109,9 +109,9 @@ stu_improvement_largest_three <- exam_1st$ID[order(rank_change,
 
 ### Grading
 
-1. 课堂表现：10%
+1. 课堂表现：20%
 2. 课程作业：30%
-3. 期中考试（20%） + 期末考核（40%）：60%
+3. 期末考核：50%
 
 总成绩 = 课堂表现 + 课程作业 + 考试
 
@@ -120,7 +120,7 @@ stu_improvement_largest_three <- exam_1st$ID[order(rank_change,
 
 ## Introduction of R
 
-R is a language and environment for **statistical computing** and **graphics.** It is a GNU project which is similar to the S language and environment which was developed at **Bell Laboratories** (formerly AT&T, now Lucent Technologies) by **[John Chambers](https://statweb.stanford.edu/~jmc4/vitae.html) and colleagues**. The current R is the result of a collaborative effort with contributions from all over the world. R was initially written by **[Robert Gentleman](https://computationalbiomed.hms.harvard.edu/people/robert-gentleman)** and **[Ross Ihaka](https://www.stat.auckland.ac.nz/~ihaka/)**---also known as "R & R" of the *Statistics Department of the University of Auckland*. Since mid-1997 there has been a core group, the [R Core Team](https://www.r-project.org/contributors.html), with write access to the R source.
+R is a language and environment for **statistical computing** and **graphics.** It is a GNU project which is similar to the S language and environment which was developed at **[Bell Laboratories](https://new.qq.com/rain/a/20210415A0BC3100)** (formerly AT&T, now Lucent Technologies) by **[John Chambers](https://statweb.stanford.edu/~jmc4/vitae.html) and colleagues**. The current R is the result of a collaborative effort with contributions from all over the world. R was initially written by **[Robert Gentleman](https://dbmi.hms.harvard.edu/people/robert-gentleman)** and **[Ross Ihaka](https://www.stat.auckland.ac.nz/~ihaka/)**---also known as "R & R" of the *Statistics Department of the University of Auckland*. Since mid-1997 there has been a core group, the [R Core Team](https://www.r-project.org/contributors.html), with write access to the R source.
 
 R provides a wide variety of statistical (linear and nonlinear modelling, classical statistical tests, time-series analysis, classification, clustering, ...) and graphical techniques, and is highly extensible.
 
@@ -264,14 +264,14 @@ Rstudio 的所有设置都在顶部菜单"Tools"中，具体为：Tools-\>Global
 
 <!-- <hr width="50%" size=3 color="#f00"> -->
 
-<!-- 2. 设定一个专门存放 R 代码的文件夹，并设置 Rstudio 启动时自动定位到该目录。 -->
-<!-- - 在桌面新建一个 Rstudio 快捷方式，如果已经有了则跳过此步 -->
-<!-- - 复制专门存放 R 代码的文件夹路径 -->
-<!-- - 在该快捷方式上右键-\>属性-\>起始位置-\>粘贴复制的路径到引号内 -->
+2. 设定一个专门存放 R 代码的文件夹（不要放在 C 盘），并设置 Rstudio 启动时自动定位到该目录。
+- 在桌面新建一个 Rstudio 快捷方式，如果已经有了则跳过此步
+- 复制专门存放 R 代码的文件夹路径
+- 在该快捷方式上右键-\>属性-\>起始位置-\>粘贴复制的路径到引号内
 
-<!-- <img style = "display: block; margin: auto" src="images/rstudio short cut.png" width="100%"> -->
+<img style = "display: block; margin: auto" src="images/rstudio short cut.png" width="100%">
 
-<!-- - 在该快捷方式上右键-\>固定到任务栏 -->
+- 在该快捷方式上右键-\>固定到任务栏
 
 
 ## Homework
