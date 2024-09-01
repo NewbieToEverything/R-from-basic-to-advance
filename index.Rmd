@@ -43,7 +43,6 @@ csl: chicago-fullnote-bibliography.csl
 
 联系方式：
 
-- QQ: 3430198622
 - Email: liyujun@jxnu.edu.cn
 
 ## Reference{-}
