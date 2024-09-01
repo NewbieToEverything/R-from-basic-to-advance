@@ -102,6 +102,61 @@ var_vec <- c(1, 2, 3)
 mean(var_Vec)
 ```
 
+## Basic: naming rules and recommendations {#naming-rule-recommendation}
+
+### Rules
+
+在 R 中，给 object 设定 name 的规则十分明确，只能由以下几类字符构成：
+
+1. 字母: `a-z`，`A-z`；
+2. 数字: `0-9`；
+3. `.`；
+4. `_`。
+
+除此之外，还有两个不允许：
+
+1. 不允许由`_`，或`0-9`，或`.0-9`开始；
+2. 不允许使用保留的单词，如`TRUE`，`NULL`，`if`和`function`，全部保留的单词列表可以通过`?Reserved`或`help("Reserved")`查看。
+
+任何 name 违背了上述两条规则时，都属于非法 name，执行时 R 会报错（`error`）并中止当前执行的代码。
+
+非法 name 示例：
+
+```{r eval = FALSE}
+_abc <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected input in '_'")
+```
+
+```{r eval = FALSE}
+.11a <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected symbol in '1a'")
+```
+
+```{r eval = FALSE}
+if <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected assignment in 'if <-'")
+```
+
+不过，如果记不住上述规则也不要紧，因为一旦使用了非法的 name，RStudio 就会有非常清晰的提示，所以无需记忆。
+
+**注意：R 中虽然可以使用中文作为 name，但并不建议这样做，可能会触发和解码有关的问题。**
+
+
+### Recommendations
+
+1. 始终用小写字母；
+2. 必要时可使用下划线`_`区分不同部分（`n_fruit`）；
+3. 变量名用名词（`n_fruit`），`function`名用动词（`order()`）；
+4. value 性质相同的变量，用相同的前缀（`n_fruit`，`n_classes`，`n_stu`，`n_teachers`）；
 
 ## Recap
 
@@ -114,3 +169,6 @@ mean(var_Vec)
 7. `x <- value`结构的语句不会在 Console 有输出结果；
 8. 一行代码只有`x`，没有`<- value`的部分，执行时会在 Console 输出 Global Environment 中与`x`匹配的 object 的 value，若只是一段可执行语句，即`x <- value`结构中的`value`部分，而没有`x <-`部分，则输出`value`本身的执行结果，生成一个 anonymous object；
 9. `#`后面的所有内容都是注释，不会被执行。
+10. name 不允许由`_`，或`0-9`，或`.0-9`开始；
+11. name 不可以是保留的单词，如`TRUE`，`NULL`，`if`和`function`，等等；
+12. name 里不建议使用中文。
