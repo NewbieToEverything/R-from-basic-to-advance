@@ -156,7 +156,7 @@ cat("Error: unexpected assignment in 'if <-'")
 1. 始终用小写字母；
 2. 必要时可使用下划线`_`区分不同部分（`n_fruit`）；
 3. 变量名用名词（`n_fruit`），`function`名用动词（`order()`）；
-4. value 性质相同的变量，用相同的前缀（`n_fruit`，`n_classes`，`n_stu`，`n_teachers`）；
+4. value 性质相同的 objects，命名时使用相同的前缀（`n_fruit`，`n_class`，`n_stu`，`n_tea`）；
 
 ## Recap
 

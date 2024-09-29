@@ -58,7 +58,7 @@ data_repeated_2f <-
   sapply(1:6, \(x) sample(5, 100, replace = T)) |>
   cbind(id = 1:100) |>
   as.data.frame() |>
-  setNames(c("id", "A1B1", "A2B1", "A1B2", "A2B2"))
+  setNames(c("id", "A1B1", "A2B1", "A1B2", "A2B2", "A1B3", "A2B3"))
 # write.table(data_repeated_2f, "F:/Nutstore backup/R/codes/RBA/data/data_repeated_2f.txt")
 # recursive res with speedness
 df_res <- sapply(1:20, \(x) sample(5, 10, replace = T)) |>
@@ -98,17 +98,23 @@ data[id_outlier, ] <- data[id_outlier, ] + matrix(runif(n_outlier * 2, 2, 3),
 
 ## Prerequisite
 
+### Translation(*)
+
+如果是使用本土学者开发的问卷或者是你自己开发的问卷，但研究成果计划发表在国外期刊上时，就涉及到翻译原始问卷的问题。此时需要使用准确、规范的学术语言。以下为 Likert 式计分量表的推荐英文表达。
+
+[Likert-Type Scale Response Anchors](https://www.marquette.edu/student-affairs/assessment-likert-scales.php)
+
 ### Tidy data
 
-数据清洗是为了将数据中的无效部分去除，并最终整理成一个清晰的形式，方便接下来直接使用统计分析方法处理清洗后的数据。因此，需要知道 R 中大多数统计分析函数对于数据的形式有什么样的要求，即什么样的数据才是干净、整洁的。这里介绍 Tidyverse 提出的 tidy data 的概念，包括以下三条规则：
+数据清洗是为了将数据中的无效部分去除，并最终整理成一个清晰的形式，方便接下来直接使用统计分析方法处理清洗后的数据。因此，需要知道 R 中大多数统计分析函数对于数据的形式有什么样的要求，即什么样的数据才是干净、整洁的。这里介绍 Tidyverse 提出的 tidy data 的概念，本质上是遵循“一人一行、一列一变量”的基本原则，tidydata 包括以下三条规则：
 
-1. Each variable must have its own column (most important).
-2. Each observation must have its own row.
-3. Each value must have its own cell.
+1. 每一个变量都要有专属的一列（最重要）；
+2. 每一份观察记录要有专属的一行；
+3. 每一个数据点要有专属的单元格。
 
 <img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/tidy data rules.png" alt="" width="500"/>
 
-- Tidy data example
+- Tidy data 示例
 
 <img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/real world data example.png" alt="" width="500"/>
 
@@ -131,14 +137,14 @@ untidy_data <-
 write.table(untidy_data, "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt")
 ```
 
-- not tidy data example
+- not tidy data 示例
 
 例如，心理统计学（第2版）例6-11，有学者研究了视觉表象对视知觉的影响，实验中要求被试从屏幕短暂呈现的图片中搜索是否有蓝色小箭头，但在被试完成的任务中，有一半任务在搜索的同时要求被试构建一个心理表象（如想象火山喷发），结果如下，要求构建心理表象条件下的错误次数是否显著高于不要求构建心理表象条件下的错误次数？
 ```{r echo = FALSE}
 read.table("F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt")
 ```
 上面展示的数据如果需要整理成`tidy data`，应该是这个样子：
-```{r}
+```{r eval = TRUE, echo = FALSE}
 data_virtual_imaginary <- 
   read.table(
     "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
@@ -165,7 +171,7 @@ data_virtual_imaginary |>
 <img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/Stefan Milton Bache.jfif" alt="" width="200"/>
 
 
-#### What is `%>%`？
+#### What is `%>%`
 
 <img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/pipe operator.png" alt="" width="500"/>
 
@@ -180,9 +186,7 @@ mean(vec)
 
 #### Placeholder
 
-当需要将`%>%`左侧的`x`传递给右侧的`fun`，且不是作为首个 argument 时，就需要用到占位符（placeholder）了，与`%>%`匹配的 placeholder 是`.`。那么如何理解占位符？
-
-类似的，placeholder 就是先给以后要传递过来的`x`占个座，等`x`传过来了就它让作为这个位置的参数，然后执行`fun`。
+当需要将`%>%`左侧的`x`传递给右侧的`fun`，且不是作为首个 argument 时，就需要用到占位符（placeholder）了，与`%>%`匹配的 placeholder 是`.`。那么如何理解 placeholder？placeholder 就是先给以后要传递过来的`x`占个座，等`x`传过来了就它让作为这个位置的参数，然后执行`fun`。
 
 ```{r}
 df <- data.frame(x = c(1, 2, 3), y = c(4, 5, 6))
@@ -305,12 +309,20 @@ mtcars |> fun(cyl)
 
 ```{r}
 x <- 1
-"x" %>% assign(4) # just like a function, %>% generates an additional env when evaluating, everything therefore happen in this environment, change will not be passed to the parent environments
+"x" %>% assign(4) 
 x
-"x" |> assign(4) # |> lead to direct assignment of x in the global environment because no additional env.
+# just like a function, %>% generates an additional 
+#   independent env when evaluating, everything therefore 
+#   happen in this environment, change will not be passed 
+#   to the parent environments
+"x" |> assign(4) 
 x
-"x" |> (\(y) assign(y, 3))() #  anonymous function acts in a way similar to %>%, since function call awalys generate additional env
+# |> lead to direct assignment of x in the global 
+#   environment because no additional env.
+"x" |> (\(y) assign(y, 3))() 
 x
+#  anonymous function acts in a way similar to %>%, 
+#   since function call always generate additional env
 ```
 
 [What are the differences between R's new native pipe `|>` and the magrittr pipe `%>%`?](https://stackoverflow.com/questions/67633022/what-are-the-differences-between-rs-new-native-pipe-and-the-magrittr-pipe)
@@ -415,8 +427,8 @@ tail(data_merged)
 
 创建完数据集以后，很有可能数据并不是 tidy data 的形式，大多是两种情况：
 
-1. Wider format: One variable might be spread across multiple columns;
-2. Longer format: One observation might be scattered across multiple rows.
+1. Wider format: 一个变量的数据跨了好几列；
+2. Longer format: 一个观察记录跨了好几行。
 
 上述两种情况都需要转换数据的形态，前者需要将数据从 wider format 转换成 longer format。在心理学领域的数据分析任务中，前者最为常见，所以本节只讲前者。
 
@@ -440,14 +452,14 @@ pivot_longer(
 )
 ```
 
-- `cols`: Columns to pivot into longer format.
-- `names_to`: A character vector specifying the new column or columns to create from the information stored in the column names of data specified by `cols`.
-  - If length >1, multiple columns will be created. In this case, one of `names_sep` or `names_pattern` must be supplied to specify how the column names should be split. 
-    - `NA` will discard the corresponding component of the column name.
-    - "`.value`" indicates that the corresponding component of the column name defines the name of the output column containing the cell values, overriding `values_to` entirely.
-- `names_sep`: `names_sep` takes the specification which can either be a numeric vector (specifying positions to break on), or a single string (specifying a regular expression to split on).
-- `names_pattern`: `names_pattern` takes a regular expression containing matching groups (()).
-- `values_to`: A string specifying the name of the column to create from the data stored in cell values. If `names_to` is a character containing the special `.value` sentinel, this value will be ignored, and the name of the value column will be derived from part of the existing column names.
+- `cols`: 要转变为 longer format 的原 columns；
+- `names_to`: 字符串向量，原 columns 的 names 将储存在新 column 的单元格里，新 column 的 name 由本参数设定。
+  - 如果`names_to`的长度大于 1，将会创建多个新的 columns。在这个情况下，必须提供`names_sep`或`names_pattern`来指定原 columns 的 names 怎么分配到新 columns 的单元格里去。
+    - `NA`：将会遗弃对应的新 column，
+    - `.value`：新 columns 的 names 是原 columns names 的一部分，新 columns 的单元格里储存对应的原 columns  单元格的数据，该参数会覆盖`value_to`参数的设定。
+- `names_sep`: 指定原 columns names 的分割规则，既可以是 numeric vector，表示按照位置来分割，也可以是单个字符（类似`read.table()`中的`sep`参数，可以是正常的字符，如`"_"`，也可以是正则表达式，如`"\."`）。
+- `names_pattern`: 正则表达式，原 columns 的 names 将按照该表达式的匹配结果分割并创建新 columns。
+- `values_to`: 字符，原 column 的单元格中的数据将单独储存在一个新 column （value column）里，新 value column 的 name 由本参数设定。如果`names_to`中包含了`.value`（必须给定`names_sep`或`names_pattern`），本参数的设定会被忽略，并且新 value column 的 name 来自原 columns name 中的指定部分。
 
 1. 基本用法：4 个必写参数，`pivot(data, cols, names_to, values_to)`
 
@@ -473,7 +485,7 @@ data_virtual_imaginary |>
 # numeric
 head(data_repeated_2f)
 data_repeated_2f |>
-  pivot_longer(cols = names(data_repeated_2f)[2:5],
+  pivot_longer(cols = 2:7,
                names_to = c("A", "B"), 
                names_sep = 2, 
                values_to = "score")
@@ -481,10 +493,11 @@ data_repeated_2f |>
 
 ```{r pivot_longer_names_sep_02, exercise = TRUE}
 # single string
-names(data_repeated_2f)[2:5] <- c("A1_B1", "A2_B1", "A1_B2", "A2_B2")
-head(data_repeated_2f)
-data_repeated_2f |>
-  pivot_longer(cols = names(data_repeated_2f)[2:5],
+data_repeated_2f_underline <- data_repeated_2f
+names(data_repeated_2f_underline)[2:7] <- c("A1_B1", "A2_B1", "A1_B2", "A2_B2", "A1_B3", "A2_B3")
+head(data_repeated_2f_underline)
+data_repeated_2f_underline |>
+  pivot_longer(cols = 2:7,
                names_to = c("A", "B"), 
                names_sep = "_", 
                values_to = "score")
@@ -495,7 +508,7 @@ data_repeated_2f |>
 ```{r pivot_longer_namespattern, exercise = TRUE}
 head(data_repeated_2f)
 data_repeated_2f |>
-  pivot_longer(cols = names(data_repeated_2f)[2:5],
+  pivot_longer(cols = 2:7,
                names_to = c("A", "B"), 
                names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
                values_to = "score")
@@ -508,7 +521,7 @@ data_repeated_2f |>
 ```{r pivot_longer_namesto_na, exercise = TRUE}
 head(data_repeated_2f)
 data_repeated_2f |>
-  pivot_longer(cols = names(data_repeated_2f)[2:5],
+  pivot_longer(cols = 2:7,
                names_to = c(NA, "B"), 
                names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
                values_to = "score")
@@ -682,10 +695,10 @@ df <-
     z = sample(7, 10, replace = TRUE)
   )
 head(df)
-df$x <- recode_vars(df$x, max = 7, vars = c("x", "y"))
-head(df)
-df <- recode_vars(df, max = 7)
-head(df)
+df_recode_xy <- recode_vars(df, max = 7, vars = c("x", "y"))
+head(df_recode_xy)
+df_recode_all <- recode_vars(df, max = 7)
+head(df_recode_all)
 ```
 
 

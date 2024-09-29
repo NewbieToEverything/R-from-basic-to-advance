@@ -211,11 +211,21 @@ a <- array(data = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), dim = c(2, 2, 3))
 a
 ```
 
-直接使用`matrix()`和`array()`来生成`structure`为`matrix`类型和`array`类型的`object`时，与`dimension`有关系的`argument`请务必写完整。
+**注意事项**
+
+1. 直接使用`matrix()`和`array()`来生成`structure`为`matrix`类型和`array`类型的`object`时，与`dimension`有关系的`argument`请务必写完整。
 ```{r always_state_dimension_explicitly}
-matrix(c(1, 2, 3 ,4), nrow = 4)
+matrix(data = c(1, 2, 3 ,4), nrow = 4)
 array(data = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), dim = c(1, 4))
 ```
+
+2. `matrix()`和`array()`生成时默认按列放置 elements（详见\@ref(byrow-recycling)），其中`matrix()`可以通过设定`byrow = TRUE`来实现默认按行放置 elements。
+```{r matrix_by_col, excercise = TRUE}
+matrix(1:6, nrow = 3, ncol = 2)
+matrix(1:6, byrow = TRUE, nrow = 3, ncol = 2)
+array(1:12, dim = c(3, 2, 2))
+```
+
 
 #### Generic attribute: dimnames
 
