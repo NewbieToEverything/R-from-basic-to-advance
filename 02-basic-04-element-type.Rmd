@@ -225,8 +225,10 @@ length(expression(1 + 3))
 `expression`常用于作图时在图片中添加数学公式，例如：
 
 ```{r expression_usage}
-x <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-       11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+x <- c(
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+)
 y <- sqrt(x)
 plot_title <- expression(y == sqrt(x))
 plot(x, y, main = plot_title)
@@ -264,7 +266,6 @@ typeof(var_null)
 1. `element type`包括 4 种基础类型和 4 种特殊类型；
 2. `NA`表示 missing value；
 3. `NaN`、`Inf`和`-Inf`表示违背了运算法则。
-
 
 
 ## Fun fact: loss of precision

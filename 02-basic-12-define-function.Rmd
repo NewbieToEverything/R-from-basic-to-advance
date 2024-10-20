@@ -241,7 +241,7 @@ get_mode <- function(x) {
   fre_tab <- table(x)
   return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
 }
-a <- sample(10, 10, TRUE)
+a <- sample(10, size = 10, replace = TRUE)
 a
 get_mode(a)
 ```
@@ -317,11 +317,11 @@ get_mode <- function(x, margin = 0) {
     return(as.numeric(names(fre_tab)[fre_tab == max(fre_tab)]))
   }
 }
-a <- matrix(sample(12, 15, TRUE), 3, 5)
+a <- matrix(sample(12, size = 15, replace = TRUE), nrow = 3, ncol = 5)
 a
 get_mode(a, margin = 1)
 get_mode(a, margin = 2)
-a1 <- array(sample(16, 16, TRUE), c(2, 4, 2))
+a1 <- array(sample(16, size = 16, replace = TRUE), dim = c(2, 4, 2))
 get_mode(a1, margin = 1)
 ```
 
@@ -357,7 +357,7 @@ get_mode <- function(x, margin = 0) {
   }
   return(all_modes)
 }
-a <- matrix(sample(12, 15, TRUE), 3, 5)
+a <- matrix(sample(12, size = 15, replace = TRUE), nrow = 3, ncol = 5)
 a
 get_mode(a)
 get_mode(a, margin = 1)

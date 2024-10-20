@@ -16,21 +16,19 @@ library(plotly)
 # mandarin, math and english data
 set.seed(123)
 n_total <- 372
-data_exams <- 
-  data.frame(
-    gender = sample(c("female", "male"), n_total, replace = TRUE),
-    age = sample(15:17, n_total, replace = TRUE),
-    class = sample(c("normal", "better", "best"), n_total, replace = TRUE),
-    school = sample(c("a", "b"), n_total, replace = TRUE),
-    exam = sample(c("last", "current"), n_total, replace = TRUE)
-  )
+data_exams <- data.frame(
+  gender = sample(c("female", "male"), n_total, replace = TRUE),
+  age = sample(15:17, n_total, replace = TRUE),
+  class = sample(c("normal", "better", "best"), n_total, replace = TRUE),
+  school = sample(c("a", "b"), n_total, replace = TRUE),
+  exam = sample(c("last", "current"), n_total, replace = TRUE)
+)
 sds <- c(8, 12, 9)
-cor_matrix <- 
-  matrix(
-    c(1, 0.30, 0.59, 0.30, 1, 0.32, 0.59, 0.32, 1), 
-    nrow = 3, 
-    ncol = 3
-  )
+cor_matrix <- matrix(
+  c(1, 0.30, 0.59, 0.30, 1, 0.32, 0.59, 0.32, 1), 
+  nrow = 3, 
+  ncol = 3
+)
 cov_matrix <- yjc::cor2cov(cor_matrix, sds)
 scores <- 
   MASS::mvrnorm(

@@ -143,7 +143,11 @@ attributes(scores)
 注意，和 atomic vector 一样，expression vector 也可以有`names`属性，例如
 
 ```{r expression_vector_name}
-var_exp <- expression(exp1 = 1 + 2, exp2 = a, exp3 = (y == sqrt(x)))
+var_exp <- expression(
+  exp1 = 1 + 2, 
+  exp2 = a, 
+  exp3 = (y == sqrt(x))
+)
 var_exp
 attributes(var_exp)
 ```
@@ -319,7 +323,8 @@ l1 <- list(
   c(TRUE, FALSE, TRUE), 
   c(2.3),
   c(NA, NA, NA), 
-  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+)
 str(l1)
 typeof(l1)
 attributes(l1)
@@ -459,9 +464,11 @@ data.frame 相比于 vector，多了（col）`names`，`row.names`，`class`3 �
 例如使用`data.frame()`创建 data.frame object：
 
 ```{r dataframe_example1_noname}
-df2 <- data.frame(c("female", "male", "female", "male", "female", "female"), 
-                  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
-                  c(18, 20, 19, 19, 21, 20))
+df2 <- data.frame(
+  c("female", "male", "female", "male", "female", "female"), 
+  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+  c(18, 20, 19, 19, 21, 20)
+)
 df2
 attributes(df2)
 ```
@@ -470,16 +477,20 @@ attributes(df2)
 
 ```{r dataframe_example1_name}
 # 1
-df2 <- data.frame(gender = c("female", "male", "female", "male", "female", "female"), 
-                  school = c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
-                  age = c(18, 20, 19, 19, 21, 20))
+df2 <- data.frame(
+  gender = c("female", "male", "female", "male", "female", "female"), 
+  school = c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+  age = c(18, 20, 19, 19, 21, 20)
+)
 df2
 attributes(df2)
 # 2
 # 1
-df2 <- data.frame(c("female", "male", "female", "male", "female", "female"), 
-                  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
-                  c(18, 20, 19, 19, 21, 20))
+df2 <- data.frame(
+  c("female", "male", "female", "male", "female", "female"), 
+  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+  c(18, 20, 19, 19, 21, 20)
+)
 names(df2) <- c("gender", "school", "age")
 df2
 attributes(df2)
@@ -494,11 +505,15 @@ attributes(df2)
 
 因为 data.frame 有着和 matrix 一样的数据呈现方式，所以，也可以使用`dimnames()`，
 ```{r dimnames_data_frame}
-df2 <- data.frame(c("female", "male", "female", "male", "female", "female"), 
-                  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
-                  c(18, 20, 19, 19, 21, 20))
-dimnames(df2) <- list(c("1", "2", "3", "4", "5", "6"), 
-                      c("gender", "school", "age"))
+df2 <- data.frame(
+  c("female", "male", "female", "male", "female", "female"),
+  c("jxnu", "ncu", "jxnu", "jxnu", "jxufe", "jxau"), 
+  c(18, 20, 19, 19, 21, 20)
+)
+dimnames(df2) <- list(
+  c("1", "2", "3", "4", "5", "6"), 
+  c("gender", "school", "age")
+)
 ```
 
 注意，当创建 data.frame 时使用的 vectors 长度不一致时，回收法则（`recycling rule`，详见“值、结构类型的转换”章节中的注意事项部分）会发挥作用，例如：

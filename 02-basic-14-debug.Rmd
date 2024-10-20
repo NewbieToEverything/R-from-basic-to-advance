@@ -133,25 +133,34 @@ Source (Ctrl+Shift+S)：读取并执行当前活动文档中的所有代码。
 - 运用分半代码并运行的方式不断缩小范围直到定位 bug 所在行；
 
 ```{r split_code_into_chunks, eval = FALSE, error = TRUE}
-scores <- read.fwf(file = "F:/Nutstore backup/R/codes/RBA/data/6.1 final data.txt", 
-                   skip = 5, width = c(3, 14, 5, 9, 9, 10, 11),
-                   col.names = c("name", "date_of_birth", "class", 
-                                 "score_last", "score_current", 
-                                 "rank_last", "rank_current"), 
-                   fileEncoding = "UTF-8")
+scores <- read.fwf(
+  file = "F:/Nutstore backup/R/codes/RBA/data/6.1 final data.txt", 
+  skip = 5, 
+  width = c(3, 14, 5, 9, 9, 10, 11),
+  col.names = c(
+    "name", "date_of_birth", "class", 
+    "score_last", "score_current", 
+    "rank_last", "rank_current"
+  ), 
+  fileEncoding = "UTF-8"
+)
 head(scores)
 rank_change <- scores$rank_currant - scores$rank_last
 scores <- cbind(scores, rank_change)
-scores <- cbind(scores, 
-                c_last = scores$score_last - mean(scores$score_last), 
-                c_current = scores$score_current - mean(scores$score_current))
+scores <- cbind(
+  scores, 
+  c_last = scores$score_last - mean(scores$score_last), 
+  c_current = scores$score_current - mean(scores$score_current)
+)
 head(scores)
-test1 <- data.frame(name = scores$name, 
-                    date_of_birth = scores$date_of_birth, 
-                    class = scores$class, 
-                    score_last = scores$score_last, 
-                    rank_last = scores$rank_last, 
-                    c_last = scores$c_last)
+test1 <- data.frame(
+  name = scores$name, 
+  date_of_birth = scores$date_of_birth, 
+  class = scores$class, 
+  score_last = scores$score_last, 
+  rank_last = scores$rank_last, 
+  c_last = scores$c_last
+)
 head(test1)
 ```
 
@@ -342,8 +351,10 @@ b <- maen(c(1, 2, 3))
 
 在需要使用 character object 时，没有用`""`
 ```{r error = TRUE, comment = ""}
-read.table("F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
-           col.names = c(studentA, studentB, studentC))
+read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
+  col.names = c(studentA, studentB, studentC)
+)
 ```
 
 在调用 function 时，function 的名字后误用`[]`，而不是`()`
@@ -353,20 +364,26 @@ a <- c[1, 2, 3]
 
 在调用 function 时，function 的输入参数是 vector，但没有用`,`隔开
 ```{r error = TRUE, comment = ""}
-read.table("F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
-           col.names = c("x" "y" "z"))
+read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
+  col.names = c("x" "y" "z")
+)
 ```
 
 在调用 function 时，function 的某个 argument 是 vector，但没有用`c()`
 ```{r error = TRUE, comment = ""}
-read.table("F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
-           col.names = "x", "y", "z")
+read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
+  col.names = "x", "y", "z"
+)
 ```
 
 在调用 function 时，使用了 function 中没有的 argument
 ```{r error = TRUE, comment = ""}
-read.table("F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
-           width = c(2, 2))
+read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/txt_example.txt", 
+  width = c(2, 2)
+)
 ```
 
 在 subsetting 时用了`()`，而不是`[]`
@@ -380,12 +397,16 @@ a(1) <- 2
 ```{r error = TRUE, comment = ""}
 # 以 list object 为例
 # 没有 names
-l1 <- list(c(1, 2, 3), 
-           c(4, 5, 6))
+l1 <- list(
+  c(1, 2, 3), 
+  c(4, 5, 6)
+)
 mean(l1$x)
 # 有 names
-l1 <- list(x = c(1, 2, 3), 
-           y = c(4, 5, 6))
+l1 <- list(
+  x = c(1, 2, 3), 
+  y = c(4, 5, 6)
+)
 mean(l1$X)
 ```
 

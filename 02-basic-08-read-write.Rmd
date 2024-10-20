@@ -169,12 +169,17 @@ is.data.frame(data_csv)
 data_txt_com <- read.table(file = "F:/Nutstore backup/R/codes/RBA/data/txt_example_complicated.txt")
 data_txt_com
 # 增加一个额外 argument, header = TRUE，意即数据文件中第一行为变量名
-data_txt_com <- read.table(file = "F:/Nutstore backup/R/codes/RBA/data/txt_example_complicated.txt", header = TRUE)
+data_txt_com <- read.table(
+  file = "F:/Nutstore backup/R/codes/RBA/data/txt_example_complicated.txt",
+  header = TRUE
+)
 data_txt_com
 # 在 header = TRUE 的基础上再增加一个额外argument, sep = ","，意即数据文件中每一行的元素是由“,”分隔
-data_txt_com <- read.table(file = "F:/Nutstore backup/R/codes/RBA/data/txt_example_complicated.txt", 
-                           header = TRUE, 
-                           sep = ",")
+data_txt_com <- read.table(
+  file = "F:/Nutstore backup/R/codes/RBA/data/txt_example_complicated.txt", 
+  header = TRUE, 
+  sep = ","
+)
 data_txt_com
 ```
 
@@ -182,9 +187,11 @@ data_txt_com
 
 从之前介绍读取 .txt 和 .dat 文件的 function 时使用的例子可以看出，`read.table()`不加任何 argument 时读取的结果和预期并不一样，比如把变量名读作了数据，又比如本该分开的三列数据都合在了一起，那么该怎么办？让我们顺着上一个例子的思路，试试给`read.table()`增加额外的 argument，
 ```{r txt_dat_fwf}
-data_txt <- read.table(file = "F:/Nutstore backup/R/codes/RBA/data/txt_example.dat", 
-                     header = TRUE, 
-                     sep = "")
+data_txt <- read.table(
+  file = "F:/Nutstore backup/R/codes/RBA/data/txt_example.dat", 
+  header = TRUE, 
+  sep = ""
+)
 data_txt
 ```
 
@@ -216,9 +223,10 @@ data_txt
 
 ```{r eval = FALSE}
 x <- read.fwf(
-  file=url("http://www.cpc.ncep.noaa.gov/data/indices/wksst8110.for"),
-  skip=4,
-  widths=c(10, 9, 4, 9, 4, 9, 4, 9, 4))
+  file = url("http://www.cpc.ncep.noaa.gov/data/indices/wksst8110.for"),
+  skip = 4,
+  widths = c(10, 9, 4, 9, 4, 9, 4, 9, 4)
+)
 ```
 
 其中，`skip = 4`表示读取时跳过头 4 行，`widths = c(10, 9, 4, 9, 4, 9, 4, 9, 4)`表示一共有 9 列数据，数字对应当前列数据的宽度。把读取固定宽度的数据想象成切菜，宽度的计算就好理解了。
@@ -230,10 +238,12 @@ x <- read.fwf(
 所以，搜索的结论是，必须彻底抛弃`read.table()`，转向`read.fwf()`。模仿高赞回答，尝试使用如下代码：
 
 ```{r txt_dat_fwf_solution}
-data_txt <- read.fwf(file = "F:/Nutstore backup/R/codes/RBA/data/txt_example.dat", 
-                     widths = c(1,1,1), 
-                     skip = 1, 
-                     col.names = c("x", "y", "z"))
+data_txt <- read.fwf(
+  file = "F:/Nutstore backup/R/codes/RBA/data/txt_example.dat", 
+  widths = c(1,1,1), 
+  skip = 1, 
+  col.names = c("x", "y", "z")
+)
 data_txt
 ```
 
@@ -253,7 +263,7 @@ data_txt
 - **.txt**
 
 ```{r saveas_txt}
-m1 <- matrix(c(99, 98, 97, 96), 2, 2)
+m1 <- matrix(c(99, 98, 97, 96), nrow = 2, ncol = 2)
 colnames(m1) <- c("Tom", "Jerry")
 m1
 write.table(m1, file = "F:/Nutstore backup/R/codes/RBA/data/m1.txt")
@@ -267,7 +277,7 @@ write.table(m1, file = "F:/Nutstore backup/R/codes/RBA/data/m1.txt")
 
 ```{r saveas_xlsx_1}
 library(openxlsx)
-m1 <- matrix(c(99, 98, 97, 96), 2, 2)
+m1 <- matrix(c(99, 98, 97, 96), nrow = 2, ncol = 2)
 colnames(m1) <- c("Tom", "Jerry")
 m1
 write.xlsx(m1, file = "F:/Nutstore backup/R/codes/RBA/data/m1.xlsx")
@@ -285,12 +295,16 @@ write.xlsx(m1, file = "F:/Nutstore backup/R/codes/RBA/data/m1.xlsx")
 
 ```{r saveas_xlsx_2}
 library(openxlsx)
-m1 <- matrix(c(99, 98, 97, 96), 2, 2)
+m1 <- matrix(c(99, 98, 97, 96), nrow = 2, ncol = 2)
 colnames(m1) <- c("Tom", "Jerry")
-write.xlsx(as.data.frame(m1), file = "F:/Nutstore backup/R/codes/RBA/data/m1.xlsx", 
-           overwrite = TRUE)
+write.xlsx(
+  as.data.frame(m1), 
+  file = "F:/Nutstore backup/R/codes/RBA/data/m1.xlsx", 
+  overwrite = TRUE
+)
 #  由于上一个例子中已经在同样的位置保存了一个 m1.xlsx，
-#   所以要提供一个额外的argument, overwrite = TRUE，
+#   所以要提供一个额外的argument, overwrite = TRUE
+#   （比较新版本的openxlsx中的默认设定），
 #   表示 write.xlsx() 在写入数据时如果已经存在同名文件可以覆盖。
 ```
 
@@ -303,6 +317,7 @@ write.xlsx(as.data.frame(m1), file = "F:/Nutstore backup/R/codes/RBA/data/m1.xls
 1. **搜索**：以“R” + “read”或“write” + “文件格式”或“软件名”为关键词，搜索合适的 function，如“R read SPSS”或“R write SPSS”通常能够搜索到带例子的解答；
 2. 通常第一步就能解决问题，如果觉得还不够清楚，可以仔细读 function 的帮助文档，里面有关于搜到的 function 的所有说明。
 
+这种简单的问题，也可以直接问 ChatGPT 类工具。
 
 ### Recap
 
@@ -347,7 +362,8 @@ l1 <- list(
   c(TRUE, FALSE, TRUE), 
   c(2.3),
   c(NA, NA, NA), 
-  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+)
 write.table(l1[[1]], file = "F:/Nutstore backup/R/codes/RBA/data/l1_1.txt")
 write.table(l1[[2]], file = "F:/Nutstore backup/R/codes/RBA/data/l1_2.txt")
 write.table(l1[[3]], file = "F:/Nutstore backup/R/codes/RBA/data/l1_3.txt")
@@ -376,7 +392,8 @@ l1 <- list(
   c(TRUE, FALSE, TRUE), 
   c(2.3),
   c(NA, NA, NA), 
-  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+)
 str(l1)
 # 注意文件扩展名 .rds
 saveRDS(l1, file = "F:/Nutstore backup/R/codes/RBA/data/l1.rds")
@@ -399,7 +416,8 @@ l1 <- list(
   c(TRUE, FALSE, TRUE), 
   c(2.3),
   c(NA, NA, NA), 
-  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2))
+  matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+)
 str(l1)
 a1 <- array(1:12, dim = c(2, 2, 3))
 a1

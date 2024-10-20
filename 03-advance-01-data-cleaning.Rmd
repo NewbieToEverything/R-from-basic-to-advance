@@ -2,19 +2,19 @@
 
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      error = TRUE, 
-                      warning = FALSE,
-                      collapse = TRUE,
-                      comment = "",
-                      fig.width = 3,
-                      fig.height = 3.5)
-suppressPackageStartupMessages(
-  {
-    library(tidyverse)
-    library(plotly)
-  }
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE, 
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "",
+  fig.width = 3,
+  fig.height = 3.5
 )
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(plotly)
+})
 data_dirty_01 <- yjc::simu_dirty_survey_data(tag_missing = 9999)$data
 data_dirty_02 <- yjc::simu_dirty_survey_data(tag_missing = 999)$data
 # write.table(data_dirty_01, filename_data_dirty_01)
@@ -37,20 +37,18 @@ data_difsub_idevar_02 <-
 # write.table(data_difsub_idevar_02, "F:/Nutstore backup/R/codes/RBA/data/data_difsub_idevar_02.txt")
 
 # the scatter records of identical subjects in different data sets 
-data_idesub_diffvar_01 <- 
-  data.frame(
-    id = 1:(n_examinee + 10), 
-    humility_t1 = sample(5, n_examinee + 10, replace = TRUE),
-    egalitarian_belief_t1 = sample(5, n_examinee + 10, replace = TRUE),
-    stereotyping_t1 = sample(5, n_examinee + 10, replace = TRUE)
-  )
-data_idesub_diffvar_02 <- 
-  data.frame(
-    id = 1:n_examinee, 
-    humility_t2 = sample(5, n_examinee, replace = TRUE),
-    egalitarian_belief_t2 = sample(5, n_examinee, replace = TRUE),
-    stereotyping_t2 = sample(5, n_examinee, replace = TRUE)
-  )
+data_idesub_diffvar_01 <- data.frame(
+  id = 1:(n_examinee + 10), 
+  humility_t1 = sample(5, n_examinee + 10, replace = TRUE),
+  egalitarian_belief_t1 = sample(5, n_examinee + 10, replace = TRUE),
+  stereotyping_t1 = sample(5, n_examinee + 10, replace = TRUE)
+)
+data_idesub_diffvar_02 <- data.frame(
+  id = 1:n_examinee, 
+  humility_t2 = sample(5, n_examinee, replace = TRUE),
+  egalitarian_belief_t2 = sample(5, n_examinee, replace = TRUE),
+  stereotyping_t2 = sample(5, n_examinee, replace = TRUE)
+)
 # write.table(data_idesub_diffvar_01, "F:/Nutstore backup/R/codes/RBA/data/data_idesub_diffvar_01.txt")
 # write.table(data_idesub_diffvar_02, "F:/Nutstore backup/R/codes/RBA/data/data_idesub_diffvar_02.txt")
 # repeated measurement
@@ -75,9 +73,11 @@ cor_matrix <- matrix(c(1, 0, 0, 1), nrow = 2, ncol = 2)
 data <- MASS::mvrnorm(1000, mu = rep(0, 2), Sigma = cor_matrix)
 n_outlier <- 20
 id_outlier <- order(rowSums(data), decreasing = T)[1:n_outlier]
-data[id_outlier, ] <- data[id_outlier, ] + matrix(runif(n_outlier * 2, 2, 3), 
-                                                  nrow = n_outlier, 
-                                                  ncol = 2)
+data[id_outlier, ] <- data[id_outlier, ] + matrix(
+  runif(n_outlier * 2, 2, 3), 
+  nrow = n_outlier, 
+  ncol = 2
+)
 ```
 
 
@@ -123,18 +123,17 @@ head(read.csv("F:/Nutstore backup/R/codes/RBA/data/Pokemon.csv"))
 ```
 
 ```{r eval = FALSE, echo = FALSE}
-untidy_data <-
-  data.frame(
-    A = c(13, 4),
-    B = c(9, 2),
-    C = c(12, 10),
-    D = c(7, 8),
-    E = c(10, 6),
-    F = c(8, 6),
-    G = c(9, 4),
-    row.names = c("virtual_imaginary", "no_virtual_imaginary")
-  )
-write.table(untidy_data, "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt")
+untidy_data <- data.frame(
+  A = c(13, 4),
+  B = c(9, 2),
+  C = c(12, 10),
+  D = c(7, 8),
+  E = c(10, 6),
+  F = c(8, 6),
+  G = c(9, 4),
+  row.names = c("virtual_imaginary", "no_virtual_imaginary")
+)
+write.table(untidy_data, "data/untidy data virtual imaginary.txt")
 ```
 
 - not tidy data 示例
@@ -145,17 +144,18 @@ read.table("F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.tx
 ```
 上面展示的数据如果需要整理成`tidy data`，应该是这个样子：
 ```{r eval = TRUE, echo = FALSE}
-data_virtual_imaginary <- 
-  read.table(
-    "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
-  )
+data_virtual_imaginary <- read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
+)
 data_virtual_imaginary |>
   t() |>
   as.data.frame(row.names = 1:ncol(data_virtual_imaginary)) |>
   cbind(participant = LETTERS[1:ncol(data_virtual_imaginary)]) |>
-  pivot_longer(cols = c("virtual_imaginary", "no_virtual_imaginary"), 
-               names_to = "group", 
-               values_to = "count") |>
+  pivot_longer(
+    cols = c("virtual_imaginary", "no_virtual_imaginary"), 
+    names_to = "group", 
+    values_to = "count"
+  ) |>
   dplyr::select(participant, group, count)
 ```
 
@@ -201,11 +201,11 @@ df %>%
 那既然是`1:3 %>% mean`与`mean(1:3)`是等价的，为什么要开发`%>%`？为了让代码看起来更加简洁易懂。
 
 ```{r}
-car_data <- 
-  transform(aggregate(. ~ cyl, 
-                      data = subset(datasets::mtcars, hp > 100), # mtcars[mtcars$hp > 100, ]
-                      FUN = function(x) round(mean(x), 2)), 
-            kpl = mpg*0.4251)
+car_data <- transform(aggregate(
+  . ~ cyl, 
+  data = subset(datasets::mtcars, hp > 100), # mtcars[mtcars$hp > 100, ]
+  FUN = function(x) round(mean(x), 2)
+), kpl = mpg*0.4251)
 car_data
 ```
 
@@ -464,18 +464,19 @@ pivot_longer(
 1. 基本用法：4 个必写参数，`pivot(data, cols, names_to, values_to)`
 
 ```{r pivot_longer_basic, exercise = TRUE}
-data_virtual_imaginary <- 
-  read.table(
-    "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
-  )
+data_virtual_imaginary <- read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
+)
 head(data_virtual_imaginary)
 data_virtual_imaginary |>
   t() |>
   as.data.frame(row.names = 1:ncol(data_virtual_imaginary)) |>
   cbind(participant = LETTERS[1:ncol(data_virtual_imaginary)]) |>
-  pivot_longer(cols = c("virtual_imaginary", "no_virtual_imaginary"), 
-               names_to = "group", 
-               values_to = "count") |>
+  pivot_longer(
+    cols = c("virtual_imaginary", "no_virtual_imaginary"), 
+    names_to = "group", 
+    values_to = "count"
+  ) |>
   dplyr::select(participant, group, count)
 ```
 
@@ -485,10 +486,12 @@ data_virtual_imaginary |>
 # numeric
 head(data_repeated_2f)
 data_repeated_2f |>
-  pivot_longer(cols = 2:7,
-               names_to = c("A", "B"), 
-               names_sep = 2, 
-               values_to = "score")
+  pivot_longer(
+    cols = 2:7,
+    names_to = c("A", "B"), 
+    names_sep = 2, 
+    values_to = "score"
+  )
 ```
 
 ```{r pivot_longer_names_sep_02, exercise = TRUE}
@@ -497,10 +500,12 @@ data_repeated_2f_underline <- data_repeated_2f
 names(data_repeated_2f_underline)[2:7] <- c("A1_B1", "A2_B1", "A1_B2", "A2_B2", "A1_B3", "A2_B3")
 head(data_repeated_2f_underline)
 data_repeated_2f_underline |>
-  pivot_longer(cols = 2:7,
-               names_to = c("A", "B"), 
-               names_sep = "_", 
-               values_to = "score")
+  pivot_longer(
+    cols = 2:7,
+    names_to = c("A", "B"), 
+    names_sep = "_", 
+    values_to = "score"
+  )
 ```
 
 3. 额外参数：`names_pattern`
@@ -508,10 +513,12 @@ data_repeated_2f_underline |>
 ```{r pivot_longer_namespattern, exercise = TRUE}
 head(data_repeated_2f)
 data_repeated_2f |>
-  pivot_longer(cols = 2:7,
-               names_to = c("A", "B"), 
-               names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
-               values_to = "score")
+  pivot_longer(
+    cols = 2:7,
+    names_to = c("A", "B"), 
+    names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
+    values_to = "score"
+  )
 ```
 
 4. `names_to`的特殊用法
@@ -521,27 +528,33 @@ data_repeated_2f |>
 ```{r pivot_longer_namesto_na, exercise = TRUE}
 head(data_repeated_2f)
 data_repeated_2f |>
-  pivot_longer(cols = 2:7,
-               names_to = c(NA, "B"), 
-               names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
-               values_to = "score")
+  pivot_longer(
+    cols = 2:7,
+    names_to = c(NA, "B"), 
+    names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
+    values_to = "score"
+  )
 ```
 
 - `.value`: indicates that the corresponding component of the column name defines the name of the output column containing the cell values, overriding `values_to` entirely.
 
 ```{r pivot_longer_namesto_dotvalue, exercise = TRUE}
 data_partipipant_id_in_col <- 
-  sapply(1:9, \(x) sample(5, 3, replace = T)) |>
+  sapply(1:9, \(x) sample(5, size = 3, replace = T)) |>
   as.data.frame() |>
-  setNames(c("var1_t1", "var2_t1", "var3_t1", 
-             "var1_t2", "var2_t2", "var3_t2", 
-             "var1_t3", "var2_t3", "var3_t3"))
+  setNames(c(
+    "var1_t1", "var2_t1", "var3_t1", 
+    "var1_t2", "var2_t2", "var3_t2", 
+    "var1_t3", "var2_t3", "var3_t3"
+  ))
 data_partipipant_id_in_col
 # component of the column name (i.e. "VAR1") defines the name of the output column
 data_partipipant_id_in_col |>
-  pivot_longer(cols = 1:ncol(data_partipipant_id_in_col), 
-               names_to = c(".value", "time_point"), 
-               names_sep = "_")
+  pivot_longer(
+    cols = 1:ncol(data_partipipant_id_in_col), 
+    names_to = c(".value", "time_point"), 
+    names_sep = "_"
+  )
 ```
 
 更多关于`pivot_longer()`的高级用法详见`vignette("pivot")`。
@@ -578,7 +591,7 @@ For question 1, "agree strongly" corresponds to the "most extraverted" option, a
 Manually recode. 
 
 ```{r}
-df <- data.frame(x = sample(5, 10, replace = TRUE))
+df <- data.frame(x = sample(5, size = 10, replace = TRUE))
 df
 df[df == 1] <- 50
 df[df == 2] <- 40
@@ -591,7 +604,7 @@ df
 
 Since recoding Likert scale survey data are repeat operations, they can be converted into a for loop,
 ```{r recode_manual_for, exercise = TRUE}
-df <- data.frame(x = sample(5, 10, replace = TRUE))
+df <- data.frame(x = sample(5, size = 10, replace = TRUE))
 df
 scale_piont <- 5
 coding_rule <- seq(scale_piont*10, 10, by = -10)
@@ -605,7 +618,7 @@ df
 What is its `apply()`/`sapply()`/`lapply()` substitute?
 
 ```{r recode_manual_apply, exercise = TRUE}
-df <- data.frame(x = sample(5, 10, replace = TRUE))
+df <- data.frame(x = sample(5, size = 10, replace = TRUE))
 scale_piont <- 5
 coding_rule <- seq(scale_piont*10, 10, by = -10)
 ```
@@ -641,7 +654,7 @@ Several recode specifications are supported:
 Character data and factor levels on the left-hand side of a recode specification must be quoted. Thus, e.g., `c(a, b, c) = 'low'` is not allowed, and should be `c('a', 'b', 'c') = 'low'`. Similarly, the colon is reserved for numeric data, and, e.g., `c('a':'c') = 'low'` is not allowed. If the `var` argument is a character variable with (some) values that are character representations of numbers, or a factor with (some) levels that are numbers (e.g., `'12'` or `'-2'`), then these too must be quoted and cannot be used with colons (e.g., `'15':'19' = '15 to 19'` is not allowed, and could be specified as `c('15', '16', '17', '18', '19') = '15 to 19'`, assuming that all values are the character representation of whole numbers).
 
 ```{r}
-x <- rep(1:3, 3)
+x <- rep(1:3, times = 3)
 x
 car::recode(x, "c(1, 2) = 'A'; else = 'B'")
 ```
@@ -651,12 +664,12 @@ Reverse-code a Liker-5 point variable.
 ```{r}
 df <- 
   data.frame(
-    x = sample(5, 10, replace = TRUE), 
-    y = sample(5, 10, replace = TRUE)
+    x = sample(5, size = 10, replace = TRUE), 
+    y = sample(5, size = 10, replace = TRUE)
   )
 df$x
 # reverse code x
-df$x <- car::recode(df$x, "1=5;2=4;3=3;4=2;5=1")
+df$x <- car::recode(df$x, recodes = "1=5;2=4;3=3;4=2;5=1")
 df$x
 # generate recode specifications with paste
 # df$x <- car::recode(df$x, paste(1:5, 5:1, sep = "=", collapse = ";"))
@@ -668,10 +681,12 @@ Reverse-code multiple variables simultaneously with a self-defined function.
 ```{r recode_self_fun, exercise = TRUE}
 # author: Wenzheng Lin
 # collaborator: Yujun Li
-recode_vars <- function(data, 
-                        max = 5, 
-                        min = 1, 
-                        vars = names(data)){
+recode_vars <- function(
+    data, 
+    max = 5, 
+    min = 1, 
+    vars = names(data)
+  ){
   rule <- paste(min:max, max:min, sep = "=", collapse = ";")
   if (!is.data.frame(data) & is.vector(data)) {
     # recode single variable
@@ -690,9 +705,9 @@ recode_vars <- function(data,
 }
 df <-
   data.frame(
-    x = sample(7, 10, replace = TRUE),
-    y = sample(7, 10, replace = TRUE),
-    z = sample(7, 10, replace = TRUE)
+    x = sample(7, size = 10, replace = TRUE),
+    y = sample(7, size = 10, replace = TRUE),
+    z = sample(7, size = 10, replace = TRUE)
   )
 head(df)
 df_recode_xy <- recode_vars(df, max = 7, vars = c("x", "y"))
@@ -735,12 +750,16 @@ c. embedded on the Borderline Personality Inventory—“Select ‘Yes’ for th
 [A more detailed introduction on attention check: Prolific's Attention and Comprehension Check Policy](https://researcher-help.prolific.co/hc/en-gb/articles/360009223553-Prolific-s-Attention-and-Comprehension-Check-Policy)
 
 ```{r}
-df <- 
-  data.frame(
-    x = sample(1:5, 10, replace = T, prob = c(0.6, 0.1, 0.1, 0.1, 0.1)),
-    y = sample(5, 10, replace = T),
-    z = sample(5, 10, replace = T)
-  )
+df <- data.frame(
+  x = sample(
+    1:5, 
+    size = 10, 
+    replace = TRUE, 
+    prob = c(0.6, 0.1, 0.1, 0.1, 0.1)
+  ),
+  y = sample(5, size = 10, replace = TRUE),
+  z = sample(5, size = 10, replace = TRUE)
+)
 head(df)
 # assume x is the attention check item and participant is requested to select 1.
 id_fail_atten_check <- (1:nrow(df))[df$x != 1]
@@ -764,14 +783,18 @@ df_filtered <- df[-id_fail_atten_check, ]
 有些时候可能由于人工录入数据的时候，出现了同一份问卷录入了两次甚至更多的问题，此时就产生了 repeated observations，使用`duplicated()`检测。
 
 ```{r}
-df <- 
-  data.frame(
-    x = sample(1:5, 10, replace = T, prob = c(0.6, 0.1, 0.1, 0.1, 0.1)),
-    y = sample(5, 10, replace = T),
-    z = sample(5, 10, replace = T)
-  )
+df <- data.frame(
+  x = sample(
+    1:5, 
+    size = 10, 
+    replace = TRUE, 
+    prob = c(0.6, 0.1, 0.1, 0.1, 0.1)
+  ),
+  y = sample(5, size = 10, replace = TRUE),
+  z = sample(5, size = 10, replace = TRUE)
+)
 head(df)
-df <- df[sample(nrow(df), 15, replace = T), ]
+df <- df[sample(nrow(df), size = 15, replace = TRUE), ]
 df
 id_dup_row <- duplicated(df)
 id_dup_row
@@ -819,11 +842,16 @@ ks.test(as.numeric(rt_recur_res), as.numeric(rt_normal_res))
 
 ```{r eval = FALSE, include = FALSE}
 set.seed(123)
-cor_matrix <- matrix(c(1, 0.43, 0.28, 0.43, 1, 0.12, 0.28, 0.12, 1), nrow = 3, ncol = 3)
+cor_matrix <- matrix(
+  c(1, 0.43, 0.28, 0.43, 1, 0.12, 0.28, 0.12, 1), 
+  nrow = 3, ncol = 3
+)
 sds <- c(0.56, 1.12, 0.70)
-data <- MASS::mvrnorm(600, 
-                      mu = c(2.65, 3.56, 2.21), 
-                      Sigma = yjc::cor2cov(cor_matrix, sds = sds)) |>
+data <- MASS::mvrnorm(
+  600, 
+  mu = c(2.65, 3.56, 2.21), 
+  Sigma = yjc::cor2cov(cor_matrix, sds = sds)
+) |>
   as.data.frame() |>
   setNames(c("alone_affinity", "time_alone", "loneliness"))
 psych::pairs.panels(data)
@@ -863,9 +891,10 @@ cor.test(data[, 1], data[, 2])
 # add_outliers
 n_outlier <- 20
 id_outlier <- order(rowSums(data), decreasing = T)[1:n_outlier]
-data[id_outlier, ] <- data[id_outlier, ] + matrix(runif(n_outlier * 2, 2, 3), 
-                                                  nrow = n_outlier, 
-                                                  ncol = 2)
+data[id_outlier, ] <- data[id_outlier, ] + matrix(
+  runif(n_outlier * 2, 2, 3), 
+  nrow = n_outlier, ncol = 2
+)
 plot(data)
 cor.test(data[, 1], data[, 2])
 ```

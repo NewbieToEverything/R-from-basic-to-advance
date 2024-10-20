@@ -283,7 +283,11 @@ matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
 
 2 维转 1 维：
 ```{r 2_1}
-as.vector(matrix(c(1, 2, 3, 4), byrow = TRUE, nrow = 2, ncol = 2))
+as.vector(matrix(
+  c(1, 2, 3, 4), 
+  byrow = TRUE, 
+  nrow = 2, ncol = 2)
+)
 ```
 
 2. **回收法则**（[recycling rule](http://www.hep.by/gnu/r-patched/r-lang/R-lang_41.html#:~:text=R%20Language%20Definition%3A%203.3.1%20Recycling%20rules%203.3.1%20Recycling,add%20c%20%281%2C%202%2C%203%2C%201%2C%202%2C%203%29.)）。当转换的 vector 和被转换的 vector 长度不一致时，绝大多数情况下， R 会自动把短的 vector 扩展成和长的 vector 一样长度，相当于把短 vector 回收（recycle）重复利用。例如：

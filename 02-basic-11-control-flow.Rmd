@@ -177,11 +177,16 @@ ifelse(test, yes, no)
 
 例如：
 ```{r ifelse}
-m1 <- matrix(sample(1:100, 16), 4)
+m1 <- matrix(sample(1:100, 16), nrow = 4, ncol = 4)
 m1
 print("检查每个元素是奇数还是偶数")
 ifelse(m1 %% 2 == 0, "even", "odd")  
-# 等价于 ifelse(m1 %% 2 == 0, matrix("even", 4), matrix("odd", 4))
+# 等价于 
+# ifelse(
+#   m1 %% 2 == 0, 
+#   matrix("even", nrow = 4, ncol = 4), 
+#   matrix("odd", nrow = 4, ncol = 4)
+# )
 print("将所有奇数变成偶数，偶数维持不变")
 ifelse(m1 %% 2 == 0, m1, m1 + 1)
 ```
@@ -248,7 +253,10 @@ for (i in c("A", "d", "r")) {
 
 ```{r for_loop_over_name}
 # character
-df <- data.frame(score_last = c(100, 88, 93), score_current = c(99, 96, 77))
+df <- data.frame(
+  score_last = c(100, 88, 93), 
+  score_current = c(99, 96, 77)
+)
 for (i in names(df)) {
   print(i)
   print(mean(df[, i]))
@@ -257,7 +265,10 @@ for (i in names(df)) {
 
 ```{r for_loop_over_position}
 # numeric
-df <- data.frame(score_last = c(100, 88, 93), score_current = c(99, 96, 77))
+df <- data.frame(
+  score_last = c(100, 88, 93), 
+  score_current = c(99, 96, 77)
+)
 for (i in 1:length(df)) {
   print(i)
   print(mean(df[, i]))
@@ -266,7 +277,10 @@ for (i in 1:length(df)) {
 
 ```{r for_loop_over_element01}
 # numeric
-df <- data.frame(score_last = c(100, 88, 93), score_current = c(99, 96, 77))
+df <- data.frame(
+  score_last = c(100, 88, 93), 
+  score_current = c(99, 96, 77)
+)
 for (i in df) {
   print(i)
   print(mean(i))
@@ -275,7 +289,7 @@ for (i in df) {
 
 ```{r for_loop_over_element02}
 # numeric
-m1 <- matrix(1:16, 4, 4)
+m1 <- matrix(1:16, nrow = 4, ncol = 4)
 cumsum_m1 <- 0
 for (i in m1) {
   print(i)
@@ -399,12 +413,14 @@ head(data_ori)
 data_30 <- data_ori[c(-7, -13, -15, -16)]
 data_30 <- data_30[data_30[7] >= 30, ]
 type_hero <- names(table(data_30$职业))
-ave_kill_1 <- c(mean(data_30$"总击杀"[data_30$职业 == type_hero[1]]), 
-                mean(data_30$"总击杀"[data_30$职业 == type_hero[2]]),
-                mean(data_30$"总击杀"[data_30$职业 == type_hero[3]]),
-                mean(data_30$"总击杀"[data_30$职业 == type_hero[4]]),
-                mean(data_30$"总击杀"[data_30$职业 == type_hero[5]]),
-                mean(data_30$"总击杀"[data_30$职业 == type_hero[6]]))
+ave_kill_1 <- c(
+  mean(data_30$"总击杀"[data_30$职业 == type_hero[1]]), 
+  mean(data_30$"总击杀"[data_30$职业 == type_hero[2]]),
+  mean(data_30$"总击杀"[data_30$职业 == type_hero[3]]),
+  mean(data_30$"总击杀"[data_30$职业 == type_hero[4]]),
+  mean(data_30$"总击杀"[data_30$职业 == type_hero[5]]),
+  mean(data_30$"总击杀"[data_30$职业 == type_hero[6]])
+)
 # 改用 for
 ave_kill_2 <- rep(0, length(type_hero))
 for (i in 1:length(type_hero)) {
@@ -419,50 +435,52 @@ ave_kill_1 == ave_kill_2
 ```{r for_subscript_mistake1, eval = FALSE}
 rm(list=ls())
 set.seed(1)
-J<-1000
-I<-30
-K<-30
-D<-1.7
-X<-matrix(NA,J,I)
-P<-matrix(NA,J,I)
+J <- 1000
+I <- 30
+K <- 30
+D <- 1.7
+X <- matrix(NA, J, I)
+P <- matrix(NA, J, I)
 
-theta<-rnorm(J,0,1)
-b<-rnorm(I,0,1)
-theta[theta>3]<-3
-theta[theta<-3]<- -3
-b[b>3]<-3
-b[b<-3]<- -3
+theta<-rnorm(J, 0, 1)
+b<-rnorm(I, 0, 1)
+theta[theta>3] <- 3
+theta[theta<-3] <- -3
+b[b > 3] <- 3
+b[b < -3] <- -3
 
 for(j in 1:J){
   for(i in 1:I){
-    P[j,i]<-1/(1+exp(-D*(theta[j]-b[i])))
-    r<-runif(1,0,1)
-    if(P[j,i]<r){
-      X[j,i]<-0
+    P[j, i] <- 1/(1 + exp(-D*(theta[j] - b[i])))
+    r <- runif(1, 0, 1)
+    if(P[j,i] < r){
+      X[j, i] <- 0
     }else{
-      X[j,i]<-1
+      X[j, i] <- 1
     }
   }
 }
-theta_k<-seq(-3,3,length.out=K)
-theta_end<-matrix(NA,J,1)
-L_k<-matrix(NA,K,1)
+theta_k<-seq(-3, 3, length.out = K)
+theta_end<-matrix(NA, J, 1)
+L_k<-matrix(NA, K, 1)
 
 for(j in 1:J){
   for(k in 1:K){
-    p_k<-1/(1+exp(-D*(theta_k[k]-b)))
+    p_k <- 1/(1 + exp(-D*(theta_k[k] - b)))
     for(i in 1:I){
-      p_k[i]<-ifelse(X[j,i]==0,
-                     1-p_k[i],
-                     p_k[i])
-      L_k[k]<-prod(p_k)
+      p_k[i] <- ifelse(
+        X[j,i] == 0,
+        1-p_k[i],
+        p_k[i]
+      )
+      L_k[k] <- prod(p_k)
     }
-    fenzi<-sum(theta_k*L_k*((1/sqrt(2*pi))*exp(-(theta_k)^2/2)))
-    fenmu<-sum(L_k*((1/sqrt(2*pi))*exp(-(theta_k)^2/2)))
+    fenzi <- sum(theta_k*L_k*((1/sqrt(2*pi))*exp(-(theta_k)^2/2)))
+    fenmu <- sum(L_k*((1/sqrt(2*pi))*exp(-(theta_k)^2/2)))
   }
-  theta_end[j]<-fenzi/fenmu
+  theta_end[j] <- fenzi/fenmu
 }
-print(mean(abs(theta_end-theta)))
+print(mean(abs(theta_end - theta)))
 ```
 
 例 2：
@@ -688,7 +706,7 @@ repeat {
 例如前文展示在使用`while`结构时避免 forever loop 的代码完全可以用如下`for`结构替代：
 ```{r while_to_for}
 set.seed(123)
-rnd_unif <- runif(1, -1, 1)
+rnd_unif <- runif(1, min = -1, max = 1)
 cum_sum_rnd_unif <- 0
 n_loop <- 20
 for (i in 1:n_loop) {

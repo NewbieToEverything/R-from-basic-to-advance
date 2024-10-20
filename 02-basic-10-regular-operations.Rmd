@@ -21,9 +21,9 @@ R 中可以执行各式各样的操作，这些操作都是通过使用 operator
 ```{r operation_arithmetic_mod_integer_divition}
 c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) %% 5  # 求余数
 c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) %/% 5  # 整除
-m1 <- matrix(c(1, 2, 3, 4, 5, 6), 3, 2)
+m1 <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
 m1
-m2 <- matrix(c(1, 2, 3, 4, 5, 6), 2, 3)
+m2 <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2, ncol = 3)
 m2
 m1 %*% m2   # 矩阵乘法
 ```
@@ -37,7 +37,7 @@ m1 %*% m2   # 矩阵乘法
   - `range(x)`
 
 ```{r operation_arithmetic_max_mix}
-m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1 <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
 max(m1)
 min(m1)
 range(m1)
@@ -50,7 +50,7 @@ range(m1)
   - `colSums(x)`，列求和。
 
 ```{r operation_arithmetic_sum}
-m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1 <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
 m1
 sum(m1)
 rowSums(m1)  
@@ -64,7 +64,7 @@ colSums(m1)
   - `colMeans(x)`，列均值。
 
 ```{r operation_arithmetic_mean}
-m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1 <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
 m1
 mean(m1)
 rowMeans(m1)
@@ -75,7 +75,7 @@ colMeans(m1)
 
 `prod(x)`，连乘求积 \(\prod_{i=1}^nx_i=x_1x_2\cdots x_n\)：
 ```{r operation_arithmetic_prod}
-m1 <- matrix(c(1, 2, 3, 4), 2, 2)
+m1 <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
 prod(m1)
 ```
 
@@ -89,7 +89,7 @@ prod(m1)
 <img style = "display: block; margin: auto;" src="images/operation round.png" width="50%"/>
 
 ```{r operation_arithmetic_round}
-m1 <- matrix(c(-1.1, -2.5, 3.9, 4.6), 2, 2)
+m1 <- matrix(c(-1.1, -2.5, 3.9, 4.6), nrow = 2, ncol = 2)
 m1
 round(m1)
 floor(m1)  
@@ -128,7 +128,7 @@ sign(c(-1, 2, -sqrt(2)))
 `t(x)`，即\(x'\)或\(x^T\)，将`x`转置（沿主对角线反转，行列互换），`x`可以是 matrix 或 data.frame。
 
 ```{r operation_arithmetic_t}
-a <- matrix(c(1, 2, 3, 4, 5, 6), 3, 2)
+a <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
 a
 t(a)
 ```
@@ -150,7 +150,7 @@ data$Area <- log(data$Area, base = 10)
 
 `>`，`<`，`>=`，`<=`，`==`，`!=`。这些 operators 返回的结果都是 logical：
 ```{r operation_logical}
-m1 <- matrix(c(-1, -2, 0, 4), 2, 2)
+m1 <- matrix(c(-1, -2, 0, 4), nrow = 2, ncol = 2)
 # 以下代码全部都受到 recycling rule 的作用
 m1 > 0
 m1 < 0
@@ -269,7 +269,7 @@ a <= 2
 
 Relational operator 和 logical operator 组合使用，可以非常便捷完成按照指定条件 subsetting 的任务，尤其是当需要满足的条件较多时：
 ```{r operation_relation_logical_example_subsetting}
-m1 <- matrix(runif(25), 5, 5)
+m1 <- matrix(runif(25), nrow = 5, nrow = 5)
 m1
 m1[m1 > 0.2 & m1 < 0.8]
 m1[m1 < 0.3 | m1 > 0.7]
@@ -324,19 +324,17 @@ vec_all %in% vec
 `%in%`可以用于挑选数据的指定列，例如：
 ```{r operataion_in}
 vars <- c("x", "y", "z")
-df <- 
-  data.frame(
-    x = sample(5, 10, replace = TRUE), 
-    n = sample(5, 10, replace = TRUE), 
-    z = sample(5, 10, replace = TRUE), 
-    m = sample(5, 10, replace = TRUE), 
-    n = sample(5, 10, replace = TRUE), 
-    y = sample(5, 10, replace = TRUE)
-  )
+df <- data.frame(
+  x = sample(5, 10, replace = TRUE), 
+  n = sample(5, 10, replace = TRUE), 
+  z = sample(5, 10, replace = TRUE), 
+  m = sample(5, 10, replace = TRUE), 
+  n = sample(5, 10, replace = TRUE), 
+  y = sample(5, 10, replace = TRUE)
+)
 df_select <- df[names(df) %in% vars]
 df_select
 ```
-
 
 `%in%`对于匹配的定义比`==`考虑的更完备，对一些特殊的匹配情况做了处理，如`NA`，只有匹配`NA`时才会返回`TRUE`的结果，否则返回`FALSE`，
 ```{r in_na}
@@ -399,9 +397,11 @@ order(score, id, decreasing = TRUE)
 `order()`常用于根据某一列重新排列整个数据。例如根据`score_math`降序排列：
 
 ```{r operation_order_example}
-data_set1 <- data.frame(name = c("小红", "小明", "小白", "小黑"), 
-                        id = c(1, 4, 2, 3),
-                        score_math = c(90, 95, 98, 95))
+data_set1 <- data.frame(
+  name = c("小红", "小明", "小白", "小黑"), 
+  id = c(1, 4, 2, 3),
+  score_math = c(90, 95, 98, 95)
+)
 data_set1[order(data_set1$score_math, id, decreasing = TRUE), ]
 ```
 
@@ -518,7 +518,12 @@ sample(5, 5, replace = TRUE)
 ```
 
 ```{r operation_others_sample_pro}
-sample(6, 6, replace = TRUE, prob = c(1/6, 1/6, 1/6, 1/6, 1/3, 1/3))
+sample(
+  6, 
+  size = 6, 
+  replace = TRUE, 
+  prob = c(1/6, 1/6, 1/6, 1/6, 1/3, 1/3)
+)
 ```
 
 随机抽样的一个典型的应用场景是自助法（Bootstrap），从样本中随机取出多批指定大小的数据，当作是平行样本。以英雄联盟数据集为例：
@@ -541,15 +546,20 @@ paste(1:12)  # 等价于 as.character(1:12)
 paste(1:12, "month")
 paste(1:12, c("st", "nd", "rd", rep("th", 9)), "month")
 paste(1:12, c("st", "nd", "rd", rep("th", 9)), "month", sep = "")
-paste(1:12, c("st", "nd", "rd", rep("th", 9)), "month", sep = "", collapse = ",")
+paste(
+  1:12, c("st", "nd", "rd", rep("th", 9)), "month", 
+  sep = "", collapse = ","
+)
 ```
 
 `paste()`可用于自动生成符合要求的文件名：
 ```{r operation_others_paste_example_varname}
 num_subsets <- 10
-filenames <- paste(1:num_subsets, 
-                    ".txt",
-                    sep = "")
+filenames <- paste(
+  1:num_subsets, 
+  ".txt",
+  sep = ""
+)
 filenames
 write.table(data_subset1, filenames[1])
 write.table(data_subset2, filenames[2])
@@ -577,8 +587,13 @@ write.table(data_subset2, filenames[2])
 cat("The correlation between a and b is", 0.6)
 cat("The correlation between a and b is", 0.6, sep = "_")
 cat("The correlation between a and b is\n", 0.6)
-cat("The correlation between a and b is", rep("+", 100), 0.6, rep("+", 100), 
-    sep = "")
+cat(
+  "The correlation between a and b is", 
+  rep("+", 100), 
+  0.6, 
+  rep("+", 100), 
+  sep = ""
+)
 ```
 
 ### Head and tail
@@ -588,7 +603,7 @@ cat("The correlation between a and b is", rep("+", 100), 0.6, rep("+", 100),
 a. `n`表示输出的个/行数，默认为 6。
 
 ```{r operation_others_head_tail}
-m1 <- matrix(1:100, 10, 10)
+m1 <- matrix(1:100, nrow = 10, ncol = 10)
 head(m1)
 tail(m1)
 ```
@@ -610,24 +625,34 @@ cut(1:10, breaks = c(0, 3, 6, 10))
 # Simulate the demographic data reported in 
 #  http://journal.psych.ac.cn/xlxb/article/2021/0439-755X/0439-755X-53-11-1215.shtml
 
-Income <- c(sample(11999, 122), 
-            sample(12000:35999, 332),
-            sample(36000:100000, 219))
+Income <- c(
+  sample(11999, 122), 
+  sample(12000:35999, 332),
+  sample(36000:100000, 219)
+)
 Income <- c(Income, NA, NA)
 is_lost <- rep(1, length(Income))
-is_lost[c(sample(122, 78), 
-          sample(123:454, 200), 
-          sample(456:673, 140))] <- 0
+is_lost[c(
+  sample(122, 78), 
+  sample(123:454, 200), 
+  sample(456:673, 140)
+)] <- 0
 is_lost[c(length(Income) - 1, length(Income))] <- NA
 data_xb <- data.frame(Income, is_lost)
 head(data_xb)
 ```
 
 ```{r acta_psy_table1-solution}
-data_xb$Income <- cut(data_xb$Income, c(0, 11999, 35999, 100000), 
-                      labels = c("￥0-11,999", "￥12,000-35,999", 
-                                 "￥36,000及以上"))
-data_xb$is_lost <- factor(data_xb$is_lost, levels = c(1, 0), labels = c("保留样本", "流失样本"))
+data_xb$Income <- cut(
+  data_xb$Income, 
+  breaks = c(0, 11999, 35999, 100000), 
+  labels = c("￥0-11,999", "￥12,000-35,999", "￥36,000及以上")
+)
+data_xb$is_lost <- factor(
+  data_xb$is_lost, 
+  levels = c(1, 0), 
+  labels = c("保留样本", "流失样本")
+)
 as.matrix(table(data_xb))
 ```
 
