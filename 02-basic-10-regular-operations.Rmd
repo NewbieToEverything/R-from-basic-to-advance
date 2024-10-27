@@ -108,7 +108,7 @@ exp(1)
 `log(x, base = exp(1))`，对数 \(\log_{base}x\)，`base`的默认值是`exp(1)`：
 ```{r operation_arithmetic_log}
 log(1)
-log(10, 10)
+log(10, base = 10)
 ```
 
 #### Others
@@ -175,13 +175,10 @@ is.nan(c(1, 2, NaN))
 is.null(c(1, 2, NULL))
 ```
 
-Relational operators 在 subsetting 的进阶写法中十分常用。例如，实训 3-2 第 1 题第 4 小问，剔除“Pick场数”低于 200 的英雄的所有数据：
-```{r operation_relation_example_subsetting}
-library(openxlsx)
-data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
-head(data_ori)
-data_200 <- data_ori[c(-7, -13, -15, -16)]
-data_200 <- data_200[data_200[, 7] >= 200, ]
+Relational operators 在 subsetting 的进阶写法中十分常用。例如，
+```{r relation_op_subset}
+vec_int <- 1:100
+vec_int[vec_int > 50]
 ```
 
 <img style = "display: block; margin: auto;" src="images/operation relation example subsetting.png" width="100%"/>
@@ -250,11 +247,12 @@ a <= 2 | a >= 4
 a >= 1 || a <= 3
 ```
 
-**注意**，如果`&`和`|`左右两边的`expr`长度不一，会触发 recycling rule （详见\@ref(byrow-recycling)）。
+**注意**，如果`&`和`|`的`LHS`和`RHS`的长度不一，会触发 recycling rule （详见\@ref(byrow-recycling)）。
 
 ```{r error=TRUE}
-c(T, F, T) & T
+# 等价于 c(T, F, T) & c(T, T, T)
 c(T, F, T) | T
+# 等价于 c(T, F, T) | c(T, T, T)
 ```
 
 #### `!`
@@ -267,7 +265,7 @@ a <= 2
 !is.na(a)
 ```
 
-Relational operator 和 logical operator 组合使用，可以非常便捷完成按照指定条件 subsetting 的任务，尤其是当需要满足的条件较多时：
+Relational operator 和 logical operator 组合使用，可以非常便捷地完成按照指定条件 subsetting 的任务，尤其是当需要同时满足多个条件时：
 ```{r operation_relation_logical_example_subsetting}
 m1 <- matrix(runif(25), nrow = 5, ncol = 5)
 m1
@@ -286,7 +284,7 @@ m1[!(m1 < 0.3 | m1 > 0.7)]
 ```{r operation_location}
 a <- runif(5)
 a
-which(a == max(a))
+which(a == max(a)) # 等价于which.max(a)，类似的还有which.min(a)
 which(a > 0.5)
 which(a > 0.1 & a < 0.9)
 ```
@@ -361,9 +359,9 @@ sort(a)
 sort(a, decreasing = TRUE)
 ```
 
-- `order(..., decreasing = FALSE)`，`...`是需一个或多个`object`。`decreasing`是可选`argument`，`decreasing = TRUE`表示按照降序排序列。
+- `order(..., decreasing = FALSE)`，`...`是一个或多个`object`。`decreasing`是可选`argument`，`decreasing = TRUE`表示按照降序排序列。
 
-`order()`输出的其实是 object 中的元素应该各自调整到哪个位置才能实现排序（升序或降序）。所以，`order()`实际上给出的是位置信息。
+`order()`输出的其实是`object`中元素位置的具体调整方式，根据该方式调整以后就实现了排序（升序或降序）。所以，`order()`实际上给出的是位置信息。
 
 a. 无重复元素
 
@@ -535,27 +533,27 @@ data_sample <- data_ori[sample(nrow(data_ori), 30), ]
 
 ### Control randomness
 
-`set.seed(seed)`
+`set.seed(integer)`
 
-- `seed`: a single value, interpreted as an integer.
+- `integer`: a single value, interpreted as an integer.
 
-R 里面所有与随机行为有关的代码（如`sample()`，`rnorm()`，`runif()`）本质上都是伪随机，都是通过某种随机数生成器（random number generator， RNG）来实现的。可以简单地认为每次 RNG 运行都需要给定一个起点，如果起点一致，那么两次随机行为的结果就是完全一致的。`set.seed()`就是用来控制起点——随机数种子（seed）的。
+R 里面所有与随机行为有关的代码（如`sample()`，`rnorm()`，`runif()`）本质上都是伪随机，都是通过激活某种随机数生成器（random number generator， RNG）来实现的。可以简单地认为每次激活 RNG 运行都需要给定一个起点，如果起点一致，那么两次随机行为的结果就是完全一致的。`set.seed()`就是用来控制每次激活 RNG 时使用的起点——随机数种子（seed）。
 
-在 R 中，所有的 seed 都存储在`.Random.seed`这个 vector 里，不同的 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
+在 R 中，所有 seed 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
 
-Mersenne-Twister 的`.Random.seed`是一个长度为 626 的 integer vector，第 1 个位置上存储的是 RNG 的编号，第 3-626 个位置上存储了 624 个 seed。
+Mersenne-Twister 对应的`.Random.seed`是一个长度为 626 的 integer vector，第 1 个位置上存储的是代表 RNG 种类的编号，第 3-626 个位置上存储的是 624 个 seed。
 ```{r seed}
 head(.Random.seed)
 length(.Random.seed)
 ```
-在不改变 RNG 种类的情况下，`set.seed()`只会改变 624 个 seed，并将`.Random.seed`第 2 个位置的数重置为 624。
+在不改变 RNG 种类的情况下，`set.seed()`只会改变 624 个 seed，并将`.Random.seed`第 2 个位置上的数重置为 624。
 ```{r setseed}
 set.seed(1)
 head(.Random.seed)
 set.seed(2)
 head(.Random.seed)
 ```
-当使用了`set.seed()`改变了 seed 后，运行的第一次含有随机行为的代码就会激活 RNG，并使用第 624 个 seed作为起点，这个被使用的 seed 位置序号 624 就是`.Random.seed`第 2 个位置上记录的信息。RN G一旦被激活一次，`.Random.seed`第 2 个位置上的记录的 seed 序号就会 + 1，变为 1，因为一共就 624 个 seed，624 + 1 = 1。下一次含有随机行为的代码在执行时，激活的 RNG 就会根据`.Random.seed`第 2 个位置上提供的 seed 序号自动使用第 1 个 seed 作为起点，其他以此类推。
+当执行了`set.seed(integer)`后，运行的第一次含有随机行为的代码就会激活一次 RNG，并使用第 624 个 seed 作为起点，这个被使用的 seed 位置序号 624 就是`.Random.seed`第 2 个位置上所记录的信息。RNG 一旦被激活一次，`.Random.seed`第 2 个位置上记录的 seed 序号就会自动 + 1，变为 1（因为一共就 624 个 seed，624 + 1 = 1）。下一次执行含有随机行为的代码时，激活的 RNG 就会根据`.Random.seed`第 2 个位置上提供的 seed 序号自动使用第 1 个 seed 作为起点，执行完毕又自动更新 seed 序号为 2，循环往复。
 ```{r seed_position}
 sample(1)
 head(.Random.seed)
@@ -563,7 +561,7 @@ sample(1)
 head(.Random.seed)
 sample(1)
 ```
-由于 R 中`.Random.seed`第 2 个位置上存储的下一个启用的 seed 序号是由 R 自动记录 RNG 的激活次数并修改的，用户无法手动调整。所以，如果要控制 seed，用户唯一能做的就是通过`set.seed()`直接更换整套 seed 并重置 seed 序号。
+由于 R 中`.Random.seed`第 2 个位置上存储的 seed 序号是由 R 自动记录 RNG 的激活次数并修改的，用户无法手动调整。所以，如果要控制 seed，用户唯一能做的就是通过`set.seed()`直接更换整套 seed 并重置 seed 序号。
 
 `set.seed()`能极大地提升代码运行结果的可重复性，因为只要`set.seed(seed)`中的`seed`不变，那后续所有含有随机行为的代码使用的 seed 就是固定的，即便是随机抽样也是可以完美重复出来的。
 ```{r setseed_recommended_usage}
