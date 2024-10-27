@@ -1,0 +1,179 @@
+# Basic: data analysis {#data-analysis}
+
+理论上，截至本章节，已经掌握的 R 语言知识就已经足够应对相当大一部分的数据分析任务了，只要同时具备相应的专业知识即可。以 [Rudert 等人](https://osf.io/f6ub7/)共享在 OSF 平台的一份中介效应数据分析代码为例：
+```{r mediation_example, eval = FALSE}
+#######Mediation script - Experimental studies (3-7)#######
+rm(list=ls())
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+install.packages("Hmisc")
+##load data
+data_S3 <- read.csv(file.choose(), header = TRUE, sep = ",") #Study3_data_complete_220120.csv
+data_S4 <- read.csv(file.choose(), header = TRUE, sep = ",") #Study4_data_complete_220125.csv
+data_S5 <- read.csv(file.choose(), header = TRUE, sep = ",") #Study5_data_complete_220127.csv
+data_S6 <- read.csv(file.choose(), header = TRUE, sep = ",") #Study6_data_complete_220127.csv
+data_S7 <- read.csv(file.choose(), header = TRUE, sep = ",") #Study7_data_complete_220204.csv
+
+##run process.R
+
+###Study 3###
+#IV and DV as numeric variable
+data_S3$target_exclusion_numeric <- ifelse(data_S3$target_exclusion == "target excluded", 1, 0)
+data_S3$TargetBehavior_numeric <- ifelse(data_S3$TargetBehavior == "norm-violating", 1, 0)
+
+##mediation analysis via relatedness goals
+#random seed: 659534
+process(data = data_S3, y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "Reason_Choice_relational_mean", model = 4, seed = 659534)
+##mediation analysis via task_approach goals
+#random seed: 
+process(data = data_S3, y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "Reason_Choice_task_approach_mean", model = 4, seed = 981522)
+
+
+###Study 4###
+#IV and DV as numeric variable
+data_S4$target_exclusion_numeric <- ifelse(data_S4$target_exclusion == "target_excluded", 1, 0)
+data_S4$TargetBehavior_numeric <- ifelse(data_S4$TargetBehavior == "control", 0, 
+                                          ifelse(data_S4$TargetBehavior == "inept", 1,2))
+
+##mediation analysis via relatedness goals
+#Random seed: 503169
+process(data = data_S4[data_S4$TargetBehavior != "inept",], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "Reason_Choice_relational_mean", model = 4, seed = 503169) #p = .4051
+##mediation analysis via task_approach goals
+#Random seed: 341173
+process(data = data_S4[data_S4$TargetBehavior != "norm-violating",], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "Reason_Choice_task_approach_mean", model = 4, seed = 341173) #p = .7234
+
+
+###Study 5###
+
+##Mediation analysis via relational goals or task approach goals
+process(data = data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "relational_goal_mean", model = 4) 
+process(data = data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "task_approach_goal_mean", model = 4) 
+
+##Moderated Mediation analysis via relational goals or task approach goals
+#relational goals
+#Random seed: 115112
+process(data = data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "relational_goal_mean", w = "Task_numeric", model = 14, seed = 115112) 
+Hmisc::rcorr(data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,]$Task_numeric,
+      +       +       data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,]$relational_goal_mean)
+#Random seed: 515036
+process(data = data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "relational_goal_mean", w = "Task_numeric", model = 8, seed = 515036) 
+
+#task approach goals
+#Random seed: 32352
+process(data = data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "task_approach_goal_mean", w = "Task_numeric", model = 14, seed = 32352) 
+rcorr(data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,]$Task_numeric,
+      +       +       data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,]$task_approach_goal_mean)
+#Random seed: 469059
+process(data = data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "task_approach_goal_mean", w = "Task_numeric", model = 8, 469059) 
+
+
+##mediated moderation analysis via burden and threat
+#Random seed: 713678
+process(data = data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "target_burdensome", w = "Task_numeric", model = 14, seed = 713678)
+#Random seed: 206890
+process(data = data_S5[data_S5$TargetBehavior != "norm-violating" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "target_burdensome", w = "Task_numeric", model = 8, seed = 206890)
+#Random seed: 19079
+process(data = data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "target_threat", w = "Task_numeric", model = 14, seed = 19079)
+#Random seed: 9411
+process(data = data_S5[data_S5$TargetBehavior != "inept" & data_S5$understood_task == 1,], y = "target_exclusion_numeric", x = "TargetBehavior_numeric",
+        m = "target_threat", w = "Task_numeric", model = 8, seed = 9411)
+
+
+###Study 6###
+
+##mediation analysis: relevance of incompetence via perceived burdensomeness of target
+#Random seed: 101606
+process(data = data_S6, y = "target_exclusion", x = "Relevance_numeric",
+        m = "target_burdensome", model = 4, seed = 101606)
+
+##mediation analysis: relevance of incompetence via perceived competence of target
+#Random seed: 994718
+process(data = data_S6, y = "target_exclusion", x = "Relevance_numeric",
+        m = "target_competence", model = 4, seed = 994718)
+
+##mediation analysis: amount of competence information via perceived competence in relevant ability
+#Random seed: 57561
+process(data = data_S6, y = "target_exclusion", x = "Amount_numeric",
+        m = "target_competence", model = 4, seed = 57561)
+
+##mediation analysis: amount of competence information via perceived burdensomeness of target
+#Random seed: 101606
+process(data = data_S6, y = "target_exclusion", x = "Amount_numeric",
+        m = "target_burdensome", model = 4, seed = 101606)
+
+##mediation analysis: relevance of incompetence via perceived warmth - big 2
+#Random seed: 57561
+process(data = data_S6, y = "target_exclusion", x = "Relevance_numeric",
+        m = "target_warmth", model = 4, seed = 57561)
+
+
+###Study 7###
+
+##mediation analysis 1a: TargetBehavior of incompetence via perceived burden for performance
+#Random seed: 659534
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_burdensome", model = 4, seed = 659534)
+
+##mediation analysis 1b: TargetBehavior of incompetence via perceived disruptiveness
+#Random seed: 593528
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_threat", model = 4, seed = 593528)
+
+
+##mediation analysis 2a: TargetBehavior of incompetence via perceived burden for performance
+#Random seed: 659534
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_competence", model = 4, seed = 659534)
+
+##mediation analysis 2b: TargetBehavior of incompetence via perceived disruptiveness
+#Random seed: 593528
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_warmth", model = 4, seed = 539528) 
+
+
+##mediated moderation analysis via burden and threat - For nature of task: "performance" = 1
+#Random seed: 224761
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_burdensome", w = "Task_numeric", model = 14, seed = 224761)
+#Random seed: 799346
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_burdensome", w = "Task_numeric", model = 8, seed = 799346)
+
+#Random seed: 827710
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_threat", w = "Task_numeric", model = 14, seed = 827710)
+#Random seed: 549736
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_threat", w = "Task_numeric", model = 8, seed = 549736)
+
+#warmth and competence
+#Random seed: 438899
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_competence", w = "Task_numeric", model = 14, seed = 438899)
+#Random seed: 588533
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_competence", w = "Task_numeric", model = 8, seed = 588533)
+
+#Random seed: 612730
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_warmth", w = "Task_numeric", model = 14, seed = 612730)
+#Random seed: 906077
+process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
+        m = "target_warmth", w = "Task_numeric", model = 8, seed = 906077)
+```
+
+除了一些相对陌生的函数如`rstudioapi::getActiveDocumentContext()`、`dirname()`、`process()`，等等。这份代码的基本结构就是先读取数据然后与数据互动（使用数据执行中介效应分析），并不存在除了统计知识以外的难点，只要使用者掌握中介效应分析中的基本知识（例如，如何通过 bootstrap 置信区间来实现中介效应的显著性检验），就可以完成任务。
+
+但只掌握这些 R 语言基本知识无法成为相对高阶的使用者，无法完成更加灵活的任务（如自动化数据分析），甚至会缺乏编程最核心的技术——debug，所以我们还需要继续学剩下的章节。
