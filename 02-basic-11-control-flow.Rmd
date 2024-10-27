@@ -404,29 +404,18 @@ i
 
 使用`var`作为位置下标（subscript），用作 subsetting 的 index，可以实现遍历的效果。
 
-以实训 3-3 中的第 4 题第 1 小问为例，要求是分别计算各职业的平均击杀数，命名为“ave_kill”：
 ```{r for_var_assub}
-#  前序代码
-library(openxlsx)
-data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
-head(data_ori)
-data_30 <- data_ori[c(-7, -13, -15, -16)]
-data_30 <- data_30[data_30[7] >= 30, ]
-type_hero <- names(table(data_30$职业))
-ave_kill_1 <- c(
-  mean(data_30$"总击杀"[data_30$职业 == type_hero[1]]), 
-  mean(data_30$"总击杀"[data_30$职业 == type_hero[2]]),
-  mean(data_30$"总击杀"[data_30$职业 == type_hero[3]]),
-  mean(data_30$"总击杀"[data_30$职业 == type_hero[4]]),
-  mean(data_30$"总击杀"[data_30$职业 == type_hero[5]]),
-  mean(data_30$"总击杀"[data_30$职业 == type_hero[6]])
+n_ob <- 1000
+medians_col <- vector(mode = "integer", length = 3)
+df <- data.frame(
+  c1 = sample(10000, size = n_ob),
+  c2 = sample(10000, size = n_ob),
+  c3 = sample(10000, size = n_ob)
 )
-# 改用 for
-ave_kill_2 <- rep(0, length(type_hero))
-for (i in 1:length(type_hero)) {
-  ave_kill_2[i] <- mean(data_30$"总击杀"[data_30$"职业" == type_hero[i]])
+for (r in 1:3) {
+  medians_col[r] <- median(df[, r])
 }
-ave_kill_1 == ave_kill_2
+medians_col
 ```
 
 但凡是采用这个使用技巧时，如果`for`结构里发现有语句是通过`subcript`取子集，但又没使用该`for`结构中的`var`作为下标，很有可能就是出错了。
@@ -539,15 +528,18 @@ tStest(v)
 
 输出结果（`for`结构中每次 loop 改动的结果变量）需提前初始化。
 
-在上面的例子中，`ave_kill_2`就是`for`结构的输出结果，`ave_kill_2 <- rep(0, length(type_hero))`就是初始化，即在`for`结构开始前给`ave_kill_2`赋值，**并且大小也根据预期提前设定好**，这样`for`结构可以顺利执行，并且执行效率最高。反之，如果不提前初始化结果变量，那么在`for`结构执行时，global environment 里是没有`ave_kill_2`的，报错并终止：
+在前面的例子中，`medians_col`就是`for`结构的输出结果，`medians_col <- vector(mode = "integer", length = 3)`就是初始化，即在`for`结构开始前给`medians_col`赋值，**并且大小也根据预期提前设定好**，这样`for`结构可以顺利执行，并且执行效率最高。反之，如果不提前初始化结果变量，那么在`for`结构执行时，global environment 里是没有`medians_col`的，报错并终止：
 ```{r for_var_preset_output, error = TRUE}
-library(openxlsx)
-data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
-data_30 <- data_ori[c(-7, -13, -15, -16)]
-data_30 <- data_30[data_30[7] >= 30, ]
-type_hero <- names(table(data_30$"职业"))
-for (i in 1:length(type_hero)) {
-  ave_kill_2[i] <- mean(data_30$"总击杀"[data_30$"职业" == type_hero[i]])
+rm(medians_col)
+n_ob <- 1000
+# medians_col <- vector(mode = "integer", length = 3)
+df <- data.frame(
+  c1 = sample(10000, size = n_ob),
+  c2 = sample(10000, size = n_ob),
+  c3 = sample(10000, size = n_ob)
+)
+for (r in 1:3) {
+  medians_col[r] <- median(df[, r])
 }
 ```
 
