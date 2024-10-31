@@ -267,7 +267,7 @@ a <= 2
 
 Relational operator 和 logical operator 组合使用，可以非常便捷地完成按照指定条件 subsetting 的任务，尤其是当需要同时满足多个条件时：
 ```{r operation_relation_logical_example_subsetting}
-m1 <- matrix(runif(25), nrow = 5, ncol = 5)
+m1 <- matrix(c(0.5, 0.1, 0.8, 0.25), nrow = 2, ncol = 2)
 m1
 m1[m1 > 0.2 & m1 < 0.8]
 m1[m1 < 0.3 | m1 > 0.7]
@@ -291,7 +291,7 @@ which(a > 0.1 & a < 0.9)
 
 使用`which()`通常不是为了将符合条件的元素取出，而是为了将这些元素的位置找出来，起个名字并保存在 Environment 里，方便后续单独处理这些元素的时候可以直接使用位置索引信息来定位。如果只是需要将符合条件的所有元素取出来，只用 relational operator 就足够了。
 ```{r operation_which}
-a <- runif(5)
+a <- c(0.5, 0.1, 0.8, 0.25)
 a
 a[which(a > 0.5)]
 a[a > 0.5]
@@ -323,12 +323,12 @@ vec_all %in% vec
 ```{r operataion_in}
 vars <- c("x", "y", "z")
 df <- data.frame(
-  x = sample(5, 10, replace = TRUE), 
-  n = sample(5, 10, replace = TRUE), 
-  z = sample(5, 10, replace = TRUE), 
-  m = sample(5, 10, replace = TRUE), 
-  n = sample(5, 10, replace = TRUE), 
-  y = sample(5, 10, replace = TRUE)
+  x = 1, 
+  n = 2, 
+  z = 3, 
+  m = 4, 
+  n = 5, 
+  y = 5
 )
 df_select <- df[names(df) %in% vars]
 df_select
@@ -353,7 +353,7 @@ df[df$x %in% 1 & df$y %in% 1, ]
 - `sort(x, decreasing = FALSE)`，将`x`升序排列（默认），输出排列后的`x`。`decreasing`是可选 argument。`decreasing = TRUE`则是按照降序排序列。
 
 ```{r operation_sort}
-a <- runif(5)
+a <- c(5, 1, 8, 2.5)
 a
 sort(a)
 sort(a, decreasing = TRUE)
@@ -408,6 +408,267 @@ data_set1[order(data_set1$score_math, id, decreasing = TRUE), ]
 vec_cha <- c("3", "2", "a", "b", "啊", "呀")
 order(vec_cha)
 vec_cha[order(vec_cha)]
+```
+
+## Randomness
+
+### Generating random number following specific distribution
+
+从指定的分布中随机抽取指定数量的数是模拟（simulation）研究中的常见任务，通常都是由生成随机数的函数来完成的。这类函数的命名特点是`rxxx()`，其中`r`代表 random，`xxx`一般都是某种分布的缩写。
+
+- `runif(n, min = 0, max = 1)`，生成`n`个在$[\min,\max]$这个闭区间（默认为$[0,1]$）内的均匀（uniform）分布随机数。
+
+```{r runif}
+runif(5)
+```
+
+- `rnorm(n, mean = 0, sd = 1)`，生成`n`个服从$N$($\mu=$`mean`, $\sigma=$`sd`)的正态（normal）分布（默认是标准正态分布$N(0,1)$）随机数。
+
+```{r rnorm}
+vec_rnd <- rnorm(5)
+vec_rnd
+mean(vec_rnd)
+sd(vec_rnd)
+vec_rnd <- rnorm(5, mean = 20, sd = 10)
+vec_rnd
+mean(vec_rnd)
+sd(vec_rnd)
+```
+
+其他类似的专门用来生成指定分布随机数的函数还有：
+
+- `rt()`，生成服从指定$t$分布随机数；
+- `rchisq()`，生成服从指定$\chi^2$分布随机数；
+- `rbeta()`，生成服从指定$\beta$分布随机数；
+- `rf()`，生成服从指定$F$分布随机数。
+
+
+### Other randomness-based sampling functions
+
+以最常用的`sample()`为例：
+
+`sample(x, size, replace = FALSE, prob = NULL)`，从`x`中随机取出`size`个元素。`x`可以是一个 vector 或 integer scalar，当`x`是 integer scalar 时，等价于`1:x`；`size`是 integer。可选 argument：
+
+a. `replace = TRUE`表示有放回抽样；
+b. `prob`是一个向量，每一个元素是`x`中对应元素被抽中的概率。
+
+```{r operation_others_sample}
+sample(5, 1)  # 等价于 sample(5, 1, prob = rep(1/5, 5))
+sample(5, 5)
+sample(5, 5, replace = TRUE)
+```
+
+```{r operation_others_sample_pro}
+sample(
+  6, 
+  size = 6, 
+  replace = TRUE, 
+  prob = c(1/6, 1/6, 1/6, 1/6, 1/3, 1/3)
+)
+```
+
+随机抽样的一个典型的应用场景是自助法（Bootstrap），从样本中随机取出多批指定大小的数据，当作是平行样本。以英雄联盟数据集为例：
+```{r operation_others_sample_bootstrap, warning = TRUE}
+library(openxlsx)
+data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
+data_sample <- data_ori[sample(nrow(data_ori), 30), ]
+```
+
+
+### Fun fact: everything is `runif()` (optional)
+
+在 R 中，绝大多数生成指定分布随机数的函数本质上都是基于`runif()`的。下面将以`rnorm()`为例来讲解。
+
+- `runif()`
+
+首先看下 R 中`runif()`的源码，如下：
+```{r runif_source, echo = FALSE}
+runif
+```
+`C_runif()`
+在实际执行时是调用 [statsR.h](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/statsR.h#L141) 中声明的`do_runif()`：
+```{c eval = FALSE}
+SEXP do_runif(SEXP sn, SEXP sa, SEXP sb);
+```
+该声明对应的定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#227) 的第 227 行：
+```{c eval = FALSE}
+DEFRAND2_REAL(runif)
+```
+其中，`DEFRAND2_REAL()`的定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#208) 的第 208-211 行：
+```{c eval = FALSE}
+#define DEFRAND2_REAL(name) \
+  SEXP do_##name(SEXP sn, SEXP sa, SEXP sb) { \
+    return random2(sn, sa, sb, name, REALSXP); \
+  }
+```
+大致意思是执行`do_runif(sn, sa, sb)`会调用`random2(sn, sa, sb, runif, REALSXP)`，其定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 的第 164-223 行，其中`sn`对应`runif(n, min, max)`中的`n`——将生成的随机数的个数，`sa`对应`min`，`sb`对应`max`，`runif`对应 `runif()`的底层 C 语言函数。`random2(sn, sa, sb, runif, REALSXP)`本质上是重复调用 C 语言版的`runif()``sn`次（详见 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#193) 的第 193-195 行）：
+```{c eval = FALSE}
+R_xlen_t n = resultLength(sn);
+for (R_xlen_t i = 0; i < n; i++) {
+  rx = fn(ra[i % na], rb[i % nb]);}
+}
+```
+综上，只要查看 C 语言版的`runif()`即可，其定义在 [runif.c](https://github.com/SurajGupta/r-source/blob/master/src/nmath/runif.c#24) 中，如下：
+```{c eval = FALSE}
+#include "nmath.h"
+
+double runif(double a, double b)
+{
+  if (!R_FINITE(a) || !R_FINITE(b) || b < a)	ML_ERR_return_NAN;
+
+  if (a == b)
+	  return a;
+  else {
+	  double u;
+	  /* This is true of all builtin generators, but protect against
+	     user-supplied ones */
+	  do {u = unif_rand();} while (u <= 0 || u >= 1);
+	  return a + (b - a) * u;
+  }
+}
+```
+其中，负责最终生成随机数的是另一个 C 语言函数`unif_rand()`，位于 [RNG.c](https://github.com/SurajGupta/r-source/blob/master/src/main/RNG.c#105) 的第 105 -179 行。
+
+- `rnorm()`
+
+再来看看`rnorm()`，其中 R 语言中能查看到的源码如下：
+```{r echo = FALSE}
+rnorm
+```
+与`runif()`类似，对应`do_rnorm()`：
+```{c eval = FALSE}
+SEXP do_rnorm(SEXP sn, SEXP sa, SEXP sb);
+```
+这个声明指向`DEFRAND2_REAL(rnorm)`，本质上也是调用`random2()`将 C 语言版的`rnorm()`重复执行`sn`次。进一步检索，能查到 C 语言版的`rnorm()`在 [rnorm.c](https://github.com/SurajGupta/r-source/blob/master/src/nmath/rnorm.c#31) 中，定义如下：
+```{c eval = FALSE}
+#include "nmath.h"
+
+double rnorm(double mu, double sigma)
+{
+  if (ISNAN(mu) || !R_FINITE(sigma) || sigma < 0.)
+    ML_ERR_return_NAN;
+  if (sigma == 0. || !R_FINITE(mu))
+	  return mu; /* includes mu = +/- Inf with finite sigma */
+  else
+	  return mu + sigma * norm_rand();
+}
+```
+不难发现，核心的随机数生成函数为`norm_rand()`，依旧是一个 C 语言函数，其定义详见 [snorm.c](https://github.com/SurajGupta/r-source/blob/master/src/nmath/snorm.c)。由于 R 语言中生成服从正态分布随机数的算法有多种，都包含在 `norm_rand()` 中。但默认算法是`inversion`（详见`?RNG`的**Details**部分），故只截取与之相关的部分，对应的是 snorm.c 的第 [265-270](https://github.com/SurajGupta/r-source/blob/master/src/nmath/snorm.c#265) 行，如下：
+```{c eval = FALSE}
+case INVERSION:
+#define BIG 134217728 /* 2^27 */
+/* unif_rand() alone is not of high enough precision */
+u1 = unif_rand();
+u1 = (int)(BIG*u1) + unif_rand();
+return qnorm5(u1/BIG, 0.0, 1.0, 1, 0);
+```
+其中负责生成随机数的核心函数是`unif_rand()`，所以`rnorm()`是基于`runif()`的。
+
+- `sample()`
+
+同理，也可查询到`sample()`是基于`runif()`的。`sample()`的 R 语言源码如下：
+```{r echo=FALSE}
+sample
+```
+继续查看`sample.int()`的 R 语言源码：
+```{r echo = FALSE}
+sample.int
+```
+核心函数为`.Internal(sample())`，对应 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/random.c#L461) 中的`do_sample()`（第 461-553 行）。以最常见的`sample()`用法为例，如`sampe(1:5, size = 1, replace = FALSE, prob = NULL)`，对应执行的分支代码是`do_sample()`的最后一部分（533-547 行）：
+```{c eval = FALSE}
+int n = (int) dn;
+PROTECT(y = allocVector(INTSXP, k));
+int *iy = INTEGER(y);
+/* avoid allocation for a single sample */
+if (replace || k < 2) {
+  for (int i = 0; i < k; i++) iy[i] = (int)(dn * unif_rand() + 1);
+} else {
+	int *x = (int *)R_alloc(n, sizeof(int));
+	for (int i = 0; i < n; i++) x[i] = i;
+	for (int i = 0; i < k; i++) {
+    int j = (int)(n * unif_rand());
+    iy[i] = x[j] + 1;
+    x[j] = x[--n];
+	}
+}
+```
+其中负责生成随机数的核心函数依旧是`unif_rand()`。
+
+以上源码的追踪均是基于: [fossies.org](https://fossies.org/dox/R-4.4.1/index.html)。
+
+
+### Control randomness (optional)
+
+#### Why do we need and how to control randomness
+
+模拟（simulation）研究常见于方法学研究，这类研究的目的可以是改进某种方法。为了实现这一目的，需要模拟生成很多批数据，且这些数据需具备随机性，这个过程称作是重复实验（replication）。重复实验本质上是在近似实际研究中多次收集数据的过程。
+
+假定一种非常极端的现象，某学者提出了一种新的统计方法，并使用 R 语言实现了该方法。该方法的代码只会在一种特定的条件下才会出错，大约是每生成 1000 批模拟数据才会有 1 批是符合这种特定条件。但由于生成数据是随机的，根本无法预计是哪一次重复实验会出错，也就无法稳定复现错误来 debug。所以，就需要使用控制随机数种子的技巧让随机有迹可循，对应的函数为`set.seed()`。
+
+`set.seed(integer)`
+
+- `integer`: a single value, interpreted as an integer.
+
+R 里面所有与随机行为有关的代码（如`sample()`，`rnorm()`，`runif()`）本质上都是伪随机，都是通过激活某种随机数生成器（random number generator， RNG）来实现的。可以简单地认为每次激活 RNG 运行都需要给定一个起点，如果起点一致，那么两次随机行为的结果就是完全一致的。`set.seed()`就是用来控制每次激活 RNG 时使用的起点——随机数种子（seed）。
+
+```{r setseed_simple}
+# 设定种子之前，结果不同
+rnorm(5) 
+rnorm(5)
+# 设定种子之后，结果相同
+set.seed(1)
+rnorm(5)
+set.seed(1)
+rnorm(5)
+```
+
+
+#### A slightly deeper understanding of `set.seed()`
+
+在 R 中，所有 seed 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
+
+Mersenne-Twister 对应的`.Random.seed`是一个长度为 626 的 integer vector，第 1 个位置上存储的是代表 RNG 种类的编号，第 2 个位置上储存的是下一次激活 RNG 将使用的 seed 位置序号，第 3-626 个位置上储存的是 624 个 seeds。
+```{r seed}
+.Random.seed[1:5]
+length(.Random.seed)
+```
+在不改变 RNG 种类的情况下，`set.seed()`只会改变`.Random.seed`的第 2-626 个位置上的信息——将下一次激活 RNG 将使用的 seed 位置序号重置为 624，并更换所有 624 个 seeds。
+```{r setseed}
+set.seed(123)
+.Random.seed[1:5]
+set.seed(1)
+.Random.seed[1:5]
+```
+以下面的代码为例：
+```{r seed_position}
+set.seed(1)
+.Random.seed[c(1:5, 626)]
+runif(1) # 第一次随机
+.Random.seed[1:5]
+runif(2) # 第二次随机
+.Random.seed[1:5]
+runif(3) # 第三次随机
+.Random.seed[1:5]
+```
+执行了`set.seed(1)`后将碰到的第一次含有随机行为的代码为`runif(1)`，这行代码共有一次随机行为，只要运行就会激活 RNG 一次，激活时会使用当前`.Random.seed`中储存的第 624 个 seed ，即 `r .Random.seed[626]` 作为起点。RNG 一旦被激活后，该种子就被使用了，`.Random.seed`第 2 个位置上记录的 下一次激活 RNG 将使用的 seed 位置序号就会自动 + 1，变为 1（因为一共就 624 个 seed，624 + 1 = 1）。
+
+下一次含有随机行为的代码为`runif(2)`，共有两次随机行为，执行该行代码时会激活 RNG 两次：
+
+1. 第一次将使用的起点就是第 1 个 seed，即 `r .Random.seed[3]`，RNG 激活完毕 seed 位置序号 + 1 变为 2；
+2. 第二次将使用的起点就是第 2 个seed，即 `r .Random.seed[4]`，RNG 激活完毕 seed 位置序号 + 1 变为 3，即 `r .Random.seed[5]`，执行完毕又自动更新 seed 位置序号为 3，循环往复。
+
+最后一次含有随机行为的代码为`runif(3)`。
+
+由于 R 中`.Random.seed`第 2 个位置上存储的 seed 位置序号是由 R 自动记录 RNG 的激活次数并修改的，用户无法手动调整。所以，如果要控制 seed，用户唯一能做的就是通过`set.seed()`直接更换整套 624 seeds 并重置下一次激活 RNG 将使用的 seed 位置序号。
+
+`set.seed()`能极大地提升代码运行结果的可重复性，因为只要`set.seed(integer)`中的`integer`不变，那后续所有含有随机行为的代码使用的 seed 顺序 就是固定的，即便是随机抽样也是可以完美重复出来的。
+```{r setseed_recommended_usage}
+set.seed(123)
+df1 <- iris[sample(nrow(iris), 3), ]
+df1
+set.seed(123)
+df2 <- iris[sample(nrow(iris), 3), ]
+df2
 ```
 
 
@@ -501,77 +762,6 @@ m1[rep(1:nrow(m1), 2), rep(1:ncol(m1), 2)]
 ```
 
 来源：[R中是否有复制平铺矩阵的函数](https://d.cosx.org/d/107403-107403)
-
-### Random sampling
-
-`sample(x, size, replace = FALSE, prob = NULL)`，从`x`中随机取出`size`个元素。`x`可以是一个 vector 或 integer scalar，当`x`是 integer scalar 时，等价于`1:x`；`size`是 integer。可选 argument：
-
-a. `replace = TRUE`表示有放回抽样；
-b. `prob`是一个向量，每一个元素是`x`中对应元素被抽中的概率。
-
-```{r operation_others_sample}
-sample(5, 1)  # 等价于 sample(5, 1, prob = rep(1/5, 5))
-sample(5, 5)
-sample(5, 5, replace = TRUE)
-```
-
-```{r operation_others_sample_pro}
-sample(
-  6, 
-  size = 6, 
-  replace = TRUE, 
-  prob = c(1/6, 1/6, 1/6, 1/6, 1/3, 1/3)
-)
-```
-
-随机抽样的一个典型的应用场景是自助法（Bootstrap），从样本中随机取出多批指定大小的数据，当作是平行样本。以英雄联盟数据集为例：
-```{r operation_others_sample_bootstrap}
-library(openxlsx)
-data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
-data_sample <- data_ori[sample(nrow(data_ori), 30), ]
-```
-
-### Control randomness
-
-`set.seed(integer)`
-
-- `integer`: a single value, interpreted as an integer.
-
-R 里面所有与随机行为有关的代码（如`sample()`，`rnorm()`，`runif()`）本质上都是伪随机，都是通过激活某种随机数生成器（random number generator， RNG）来实现的。可以简单地认为每次激活 RNG 运行都需要给定一个起点，如果起点一致，那么两次随机行为的结果就是完全一致的。`set.seed()`就是用来控制每次激活 RNG 时使用的起点——随机数种子（seed）。
-
-在 R 中，所有 seed 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
-
-Mersenne-Twister 对应的`.Random.seed`是一个长度为 626 的 integer vector，第 1 个位置上存储的是代表 RNG 种类的编号，第 3-626 个位置上存储的是 624 个 seed。
-```{r seed}
-head(.Random.seed)
-length(.Random.seed)
-```
-在不改变 RNG 种类的情况下，`set.seed()`只会改变 624 个 seed，并将`.Random.seed`第 2 个位置上的数重置为 624。
-```{r setseed}
-set.seed(1)
-head(.Random.seed)
-set.seed(2)
-head(.Random.seed)
-```
-当执行了`set.seed(integer)`后，运行的第一次含有随机行为的代码就会激活一次 RNG，并使用第 624 个 seed 作为起点，这个被使用的 seed 位置序号 624 就是`.Random.seed`第 2 个位置上所记录的信息。RNG 一旦被激活一次，`.Random.seed`第 2 个位置上记录的 seed 序号就会自动 + 1，变为 1（因为一共就 624 个 seed，624 + 1 = 1）。下一次执行含有随机行为的代码时，激活的 RNG 就会根据`.Random.seed`第 2 个位置上提供的 seed 序号自动使用第 1 个 seed 作为起点，执行完毕又自动更新 seed 序号为 2，循环往复。
-```{r seed_position}
-sample(1)
-head(.Random.seed)
-sample(1)
-head(.Random.seed)
-sample(1)
-```
-由于 R 中`.Random.seed`第 2 个位置上存储的 seed 序号是由 R 自动记录 RNG 的激活次数并修改的，用户无法手动调整。所以，如果要控制 seed，用户唯一能做的就是通过`set.seed()`直接更换整套 seed 并重置 seed 序号。
-
-`set.seed()`能极大地提升代码运行结果的可重复性，因为只要`set.seed(seed)`中的`seed`不变，那后续所有含有随机行为的代码使用的 seed 就是固定的，即便是随机抽样也是可以完美重复出来的。
-```{r setseed_recommended_usage}
-set.seed(123)
-df1 <- iris[sample(nrow(iris), 3), ]
-df1
-set.seed(123)
-df2 <- iris[sample(nrow(iris), 3), ]
-df2
-```
 
 ### Concatenate strings 
 
