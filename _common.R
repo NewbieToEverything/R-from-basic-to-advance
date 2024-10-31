@@ -5,7 +5,7 @@ options(width = 60)
 knitr::opts_chunk$set(
   comment = "#>",
   collapse = FALSE
-  )
+)
 
 var_lgl <- c(TRUE, FALSE)
 var_int <- c(1L, 6L, 10L)
