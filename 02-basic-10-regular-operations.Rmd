@@ -416,7 +416,7 @@ vec_cha[order(vec_cha)]
 
 从指定的分布中随机抽取指定数量的数是模拟（simulation）研究中的常见任务，通常都是由生成随机数的函数来完成的。这类函数的命名特点是`rxxx()`，其中`r`代表 random，`xxx`一般都是某种分布的缩写。
 
-- `runif(n, min = 0, max = 1)`，生成`n`个在$[\min,\max]$这个闭区间（默认为$[0,1]$）内的均匀（uniform）分布随机数。
+- `runif(n, min = 0, max = 1)`生成`n`个在$(\min,\max)$这个开区间（默认为$(0,1)$）内的均匀（uniform）分布随机数。
 
 ```{r runif}
 runif(5)
@@ -501,7 +501,7 @@ DEFRAND2_REAL(runif)
     return random2(sn, sa, sb, name, REALSXP); \
   }
 ```
-大致意思是执行`do_runif(sn, sa, sb)`会调用`random2(sn, sa, sb, runif, REALSXP)`，其定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 的第 164-223 行，其中`sn`对应`runif(n, min, max)`中的`n`——将生成的随机数的个数，`sa`对应`min`，`sb`对应`max`，`runif`对应 `runif()`的底层 C 语言函数。`random2(sn, sa, sb, runif, REALSXP)`本质上是重复调用 C 语言版的`runif()``sn`次（详见 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#193) 的第 193-195 行）：
+大致意思是执行`do_runif(sn, sa, sb)`会调用`random2(sn, sa, sb, runif, REALSXP)`，其定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 的第 164-223 行，其中`sn`对应`runif(n, min, max)`中的`n`——将生成的随机数的个数，`sa`对应`min`，`sb`对应`max`，`runif`对应 `runif()`的底层 C 语言函数。`random2(sn, sa, sb, runif, REALSXP)`本质上是重复调用 C 语言版的`runif()`，共计`sn`次（详见 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#193) 的第 193-195 行）：
 ```{c eval = FALSE}
 R_xlen_t n = resultLength(sn);
 for (R_xlen_t i = 0; i < n; i++) {
@@ -574,7 +574,7 @@ sample
 ```{r echo = FALSE}
 sample.int
 ```
-核心函数为`.Internal(sample())`，对应 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/random.c#L461) 中的`do_sample()`（第 461-553 行）。以最常见的`sample()`用法为例，如`sampe(1:5, size = 1, replace = FALSE, prob = NULL)`，对应执行的分支代码是`do_sample()`的最后一部分（533-547 行）：
+核心函数为`.Internal(sample())`，对应 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/random.c#L461) 中的`do_sample()`（第 461-553 行）。以最常见的`sample()`用法为例，如`sampe(1:5, size = 1, replace = FALSE, prob = NULL)`，对应执行是`do_sample()`最后一部分的分支代码（533-547 行）：
 ```{c eval = FALSE}
 int n = (int) dn;
 PROTECT(y = allocVector(INTSXP, k));
@@ -623,9 +623,9 @@ rnorm(5)
 ```
 
 
-#### A slightly deeper understanding of `set.seed()`
+#### A slightly deeper understanding of `set.seed()` (optional)
 
-在 R 中，所有 seed 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
+在 R 中，所有 seeds 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
 
 Mersenne-Twister 对应的`.Random.seed`是一个长度为 626 的 integer vector，第 1 个位置上存储的是代表 RNG 种类的编号，第 2 个位置上储存的是下一次激活 RNG 将使用的 seed 位置序号，第 3-626 个位置上储存的是 624 个 seeds。
 ```{r seed}
@@ -639,36 +639,164 @@ set.seed(123)
 set.seed(1)
 .Random.seed[1:5]
 ```
-以下面的代码为例：
+在使用了`set.seed()`以后，只要是执行含有随机行为的代码，RNG 运用`.Random.seed`的基本流程就是：
+
+- 一次随机行为激活一次 RNG，激活时按顺序使用一个 seed，
+- RNG 激活后更新`.Random.seed`第 2 个位置上记录的 seed 位置序号。
+
 ```{r seed_position}
 set.seed(1)
-.Random.seed[c(1:5, 626)]
-runif(1) # 第一次随机
 .Random.seed[1:5]
-runif(2) # 第二次随机
+runif(1) # 共有 1 次随机行为
 .Random.seed[1:5]
-runif(3) # 第三次随机
+runif(2) # 共有 2 次随机行为
+.Random.seed[1:5]
+runif(3) # 共有 3 次随机行为
 .Random.seed[1:5]
 ```
-执行了`set.seed(1)`后将碰到的第一次含有随机行为的代码为`runif(1)`，这行代码共有一次随机行为，只要运行就会激活 RNG 一次，激活时会使用当前`.Random.seed`中储存的第 624 个 seed ，即 `r .Random.seed[626]` 作为起点。RNG 一旦被激活后，该种子就被使用了，`.Random.seed`第 2 个位置上记录的 下一次激活 RNG 将使用的 seed 位置序号就会自动 + 1，变为 1（因为一共就 624 个 seed，624 + 1 = 1）。
+但不难看出以上代码的运行结果似乎和前述的基本流程有所出入，`.Random.seed`在执行`runif(1)`后会改变，然后就固定不变了。下面来解释一下背后的原因。
 
-下一次含有随机行为的代码为`runif(2)`，共有两次随机行为，执行该行代码时会激活 RNG 两次：
+R 中`runif(1)`本质上是调用 C 语言函数`random2()` 1 次。在生成随机数前，`random2()`的第 [188](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 行会先执行`GetRNGstate()`，该函数的定义详见 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#397) 的第 397-422 行。其中，第 401-406 行表明`GetRNGstate()`会先尝试获取已经存在的 seeds（即由`set.seed(1)`更新的`.Random.seed`的第 2-626 个元素），如果没有则此时会自动生成一组随机的 seeds：
+```{c eval = FALSE}
+SEXP seeds;
 
-1. 第一次将使用的起点就是第 1 个 seed，即 `r .Random.seed[3]`，RNG 激活完毕 seed 位置序号 + 1 变为 2；
-2. 第二次将使用的起点就是第 2 个seed，即 `r .Random.seed[4]`，RNG 激活完毕 seed 位置序号 + 1 变为 3，即 `r .Random.seed[5]`，执行完毕又自动更新 seed 位置序号为 3，循环往复。
+/* look only in the workspace */
+seeds = GetSeedsFromVar();
+if (seeds == R_UnboundValue) {
+  Randomize(RNG_kind);
+```
+后续就会调用`unif_rand()`，该函数的定义详见 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#109) 的第 109-183 行。`unif_rand()`中激活 R 的默认 RNG  [136-137](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#136) 的代码在第 136-137 行：
+```{c eval = FALSE}
+case MERSENNE_TWISTER:
+return fixup(MT_genrand());
+```
+其中，`fixup()`函数的定义在 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#100) 的第 100-106 行，不难看出这个函数只是用来保证生成出来的随机数不会恰好是 0 或 1：
+```{c eval = FALSE}
+#define i2_32m1 2.328306437080797e-10/* = 1/(2^32 - 1) */
+static double fixup(double x)
+{
+  /* ensure 0 and 1 are never returned */
+  if(x <= 0.0) return 0.5*i2_32m1;
+  if((1.0 - x) <= 0.0) return 1.0 - 0.5*i2_32m1;
+  return x;
+}
+```
+因此，负责生成随机数的核心函数是`MT_genrand()`，其定义在 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#687) 的第 687-732 行。下面只摘出其中关键的部分并加以注释：
+```{c eval = FALSE}
+static Int32 dummy[628]; // allow for optimizing compilers to read over bound
 
-最后一次含有随机行为的代码为`runif(3)`。
+// dummy is an array, of which the 1st element is the current position, 
+// the 2-625 elements are the 624 seeds.
+// after set.seed(1), dummy[0] = 624
 
-由于 R 中`.Random.seed`第 2 个位置上存储的 seed 位置序号是由 R 自动记录 RNG 的激活次数并修改的，用户无法手动调整。所以，如果要控制 seed，用户唯一能做的就是通过`set.seed()`直接更换整套 624 seeds 并重置下一次激活 RNG 将使用的 seed 位置序号。
+#define N 624
+#define M 397
+#define UPPER_MASK 0x80000000 /* most significant w-r bits */
+#define LOWER_MASK 0x7fffffff /* least significant r bits */
 
-`set.seed()`能极大地提升代码运行结果的可重复性，因为只要`set.seed(integer)`中的`integer`不变，那后续所有含有随机行为的代码使用的 seed 顺序 就是固定的，即便是随机抽样也是可以完美重复出来的。
+static Int32 *mt = dummy+1; /* the array for the state vector  */
+
+// mt = dummy with the 1st removed, mt are the 624 seeds, if modified, dummy
+// will be updated
+
+static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
+
+static double MT_genrand(void)
+{
+  Int32 y;
+  static Int32 mag01[2]={0x0, MATRIX_A};
+  /* mag01[x] = x * MATRIX_A  for x=0,1 */
+
+  mti = dummy[0]; /**/
+  
+  // mti = 624, the following if body will be executed
+
+  if (mti >= N) { /* generate N words at one time */
+    int kk;
+
+    if (mti == N+1)   /* if sgenrand() has not been called, */
+      MT_sgenrand(4357); /* a default initial seed is used   */
+
+    for (kk = 0; kk < N - M; kk++) {
+      y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
+      mt[kk] = mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
+    }
+    // scramble the 1-397 seeds
+    for (; kk < N - 1; kk++) {
+      y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
+      mt[kk] = mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
+    }
+    y = (mt[N-1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
+    mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
+    // then scramble the 398-624 seeds
+  
+    mti = 0; 
+    // update the current position
+  }
+
+  y = mt[mti++];
+  // use the current value of mti, 0, as the index, extract mt[0]
+  // then mti = mit + 1
+  
+  y ^= TEMPERING_SHIFT_U(y);
+  y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
+  y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
+  y ^= TEMPERING_SHIFT_L(y);
+  // use mt[0] as the seed to generate 1 random number 
+  
+  dummy[0] = mti;
+  // record the current position
+
+  return ( (double)y * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
+}
+```
+所以，当`set.seed(1)`重置`.Random.seed`第 2 个位置上记录的 seed 位置序号为 624 后，第一次激活 RNG 时就会把 624 个 seeds 全部重新改变一次。此后再激活 RNG 时就会因为 seed 位置序号不满足条件（`mti<=N`）自动跳过改变所有 seeds 的语句，seeds 就保持不变。可想而知，`set.seed(1)`后每激活 RNG 624 次，所有的 624 个 seeds 就会被自动更新：
+```{r seed_autoupdate}
+set.seed(1)
+.Random.seed[1:5]
+do_not_display <- runif(624)
+.Random.seed[1:5]
+do_not_display <- runif(624)
+.Random.seed[1:5]
+```
+这种周期性自动更新全部 seeds 的设定可以避免 RNG 生成出重复的随机数。不过，由于`set.seed(1)`的存在，所以相当于人为设定了 seeds 自动更新的起点。因此，只要`set.seed(integer)`中的`integer`不变，那后续所有含有随机行为的代码使用的 seed 顺序就是固定的。只要代码的执行顺序不变，即便是随机抽样也是可以完美重复出来：
 ```{r setseed_recommended_usage}
-set.seed(123)
+set.seed(1)
 df1 <- iris[sample(nrow(iris), 3), ]
+rnd1 <- runif(3)
 df1
-set.seed(123)
+rnd1
+set.seed(1)
 df2 <- iris[sample(nrow(iris), 3), ]
+rnd2 <- runif(3)
 df2
+rnd2
+```
+需要注意的是，R 默认的 RNG Mersenne-Twister 会在一些特殊的情况下出现大面积重复：
+```{r}
+set.seed(0)
+seeds_1 <- .Random.seed[-1]
+runif(10)
+set.seed(1)
+seeds_2 <- .Random.seed[-1]
+runif(10)
+sum(seeds_1 %in% seeds_2)
+```
+由于无法准确预测什么时候会出现这个问题，因此建议不要频繁修改 `set.seed()`。在 simulation 中，单次重复实验使用一次 `set.seed(integer)`，或者可以考虑自定义一段代码来自动调整`integer`，以下是一个简单的示例：
+```{r eval = FALSE}
+seed_old <- .Random.seed[-1]
+int <- 0
+is_change <- TRUE
+while (is_change) {
+  set.seed(int)
+  seed_new <- .Random.seed[-1]
+  if (sum(seed_old %in% seed_new) < 100) {
+    is_change <- FALSE 
+  } else {
+    is_change <- TRUE
+    int <- int + 1
+  }
+}
 ```
 
 
