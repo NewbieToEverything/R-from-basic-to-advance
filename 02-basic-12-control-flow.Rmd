@@ -693,7 +693,7 @@ repeat {
 }
 ```
 
-考虑到`while`和`repeat`结构在不够谨慎的情况下都有陷入 forever loop 的风险，而二者的本质作用都是 执行多次 loop，和`for`结构并无差异，因此，在绝大多数情况下都建议使用`for`结构。
+考虑到`while`和`repeat`结构在不够谨慎的情况下都有陷入 forever loop 的风险，而二者的本质作用都是执行多次 loop，和`for`结构并无差异，因此，在绝大多数情况下都建议使用`for`结构。
 
 例如前文展示在使用`while`结构时避免 forever loop 的代码完全可以用如下`for`结构替代：
 ```{r while_to_for}
