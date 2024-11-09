@@ -1,6 +1,6 @@
 # Basic: data analysis {#data-analysis}
 
-理论上，截至本章节，已经掌握的 R 语言知识就已经足够应对相当大一部分的数据分析任务了，只要同时具备相应的专业知识即可。以 [Rudert 等人](https://osf.io/f6ub7/)共享在 OSF 平台的一份中介效应数据分析代码为例：
+理论上，学至本章节，已经掌握的 R 语言知识就已经足够应对相当大一部分的数据分析任务了，只要同时具备相应的专业知识即可。以 [Rudert 等人](https://osf.io/f6ub7/)共享在 OSF 平台的一份中介效应数据分析代码为例：
 ```{r mediation_example, eval = FALSE}
 #######Mediation script - Experimental studies (3-7)#######
 rm(list=ls())
@@ -173,7 +173,11 @@ process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
 process(data = data_S7, y = "target_exclusion", x = "TargetBehavior_numeric",
         m = "target_warmth", w = "Task_numeric", model = 8, seed = 906077)
 ```
+以上代码的基本结构如下：
 
-除了一些相对陌生的函数如`rstudioapi::getActiveDocumentContext()`、`dirname()`、`process()`，等等。这份代码的基本结构就是先读取数据然后与数据互动（使用数据执行中介效应分析），并不存在除了统计知识以外的难点，只要使用者掌握中介效应分析中的基本知识（例如，如何通过 bootstrap 置信区间来实现中介效应的显著性检验），就可以完成任务。
+1. 先读取数据；
+2. 与数据互动（使用数据执行中介效应分析）。
 
-但只掌握这些 R 语言基本知识无法成为相对高阶的使用者，无法完成更加灵活的任务（如自动化数据分析），甚至会缺乏编程最核心的技术——debug，所以我们还需要继续学剩下的章节。
+其中除了一些相对陌生的函数，如`rstudioapi::getActiveDocumentContext()`、`dirname()`、`process()`等之外，并不存在编程上的难点，都是非常直接的代码。所以，要完成这个数据分析任务的难点其实是关于中介效应分析的统计知识（例如，如何通过 bootstrap 置信区间来实现中介效应的显著性检验）。
+
+但只掌握目前学过的 R 语言基本知识无法成为相对高阶的使用者，无法完成更加灵活的任务（如自动化数据分析），甚至会缺乏编程最核心的技术——debug，所以还需要继续学剩下的章节。
