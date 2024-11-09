@@ -5,6 +5,7 @@ R 中可以执行各式各样的操作，这些操作都是通过使用 operator
 - 基本数学运算
 - 关系和逻辑
 - 筛选和排序
+- 随机抽样
 - 其他
 
 注意：绝大多数 operators 和 functions 都支持 recycling rule（详见\@ref(byrow-recycling)）。
@@ -392,6 +393,13 @@ order(score, id, decreasing = TRUE)
 
 总结一下，当输入 1 个 object 时，`order()`排序的是这个`object`；当输入多个`object`时（这些`object`都必须是同样长度），`order()`排序的依旧是第一个`object`，只不过该 object 中的重复元素是以第 2 个 object 中对应位置上的元素大小为依据，若这些元素依旧是重复的，则按照第 3 个 object 中对应位置上的元素大小为依据，依此类推。
 
+`order()`对字符也有效，默认升序，数字按从小到大，英文按字母，中文按拼音顺序，三者的优先级是数字 > 英文字母 > 中文拼音：
+```{r operation_order_letter}
+vec_cha <- c("3", "2", "a", "b", "啊", "呀")
+order(vec_cha)
+vec_cha[order(vec_cha)]
+```
+
 `order()`常用于根据某一列重新排列整个数据。例如根据`score_math`降序排列：
 
 ```{r operation_order_example}
@@ -403,12 +411,6 @@ data_set1 <- data.frame(
 data_set1[order(data_set1$score_math, id, decreasing = TRUE), ]
 ```
 
-`order()`对字符也有效，默认升序，数字按从小到大，英文按字母，中文按拼音顺序，三者的优先级是数字 > 英文字母 > 中文拼音：
-```{r operation_order_letter}
-vec_cha <- c("3", "2", "a", "b", "啊", "呀")
-order(vec_cha)
-vec_cha[order(vec_cha)]
-```
 
 ## Randomness
 
@@ -475,7 +477,7 @@ data_sample <- data_ori[sample(nrow(data_ori), 30), ]
 ```
 
 
-### Fun fact: everything is `runif()` (optional)
+### Fun fact: everything is `runif()` (optional) {#runif-is-everyrthing}
 
 在 R 中，绝大多数生成指定分布随机数的函数本质上都是基于`runif()`的。下面将以`rnorm()`为例来讲解。
 
@@ -490,7 +492,7 @@ runif
 ```{c eval = FALSE}
 SEXP do_runif(SEXP sn, SEXP sa, SEXP sb);
 ```
-该声明对应的定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#227) 的第 227 行：
+调用`do_runif()`的代码在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#227) 的第 227 行：
 ```{c eval = FALSE}
 DEFRAND2_REAL(runif)
 ```
@@ -501,11 +503,12 @@ DEFRAND2_REAL(runif)
     return random2(sn, sa, sb, name, REALSXP); \
   }
 ```
-大致意思是执行`do_runif(sn, sa, sb)`会调用`random2(sn, sa, sb, runif, REALSXP)`，其定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 的第 164-223 行，其中`sn`对应`runif(n, min, max)`中的`n`——将生成的随机数的个数，`sa`对应`min`，`sb`对应`max`，`runif`对应 `runif()`的底层 C 语言函数。`random2(sn, sa, sb, runif, REALSXP)`本质上是重复调用 C 语言版的`runif()`，共计`sn`次（详见 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#193) 的第 193-195 行）：
+大致意思是执行`do_runif(sn, sa, sb)`会调用`random2(sn, sa, sb, name, REALSXP)`，其定义在 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 的第 164-223 行，其中`sn`对应`runif(n, min, max)`中的`n`——将生成的随机数的个数，`sa`对应`min`，`sb`对应`max`，`name`对应 `runif()`的底层 C 语言函数。`random2(sn, sa, sb, name, REALSXP)`本质上是重复调用 C 语言版的`runif()`，共计`sn`次（详见 [random.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#193) 的第 193-195 行）：
 ```{c eval = FALSE}
 R_xlen_t n = resultLength(sn);
 for (R_xlen_t i = 0; i < n; i++) {
-  rx = fn(ra[i % na], rb[i % nb]);}
+  rx = fn(ra[i % na], rb[i % nb]);} 
+  // when executing random2, name is fn within the life cycle of random2
 }
 ```
 综上，只要查看 C 语言版的`runif()`即可，其定义在 [runif.c](https://github.com/SurajGupta/r-source/blob/master/src/nmath/runif.c#24) 中，如下：
@@ -562,7 +565,7 @@ u1 = unif_rand();
 u1 = (int)(BIG*u1) + unif_rand();
 return qnorm5(u1/BIG, 0.0, 1.0, 1, 0);
 ```
-其中负责生成随机数的核心函数是`unif_rand()`，所以`rnorm()`是基于`runif()`的。
+其中负责生成随机数的核心函数同样是`unif_rand()`，所以`rnorm()`是基于`runif()`的。
 
 - `sample()`
 
@@ -597,7 +600,7 @@ if (replace || k < 2) {
 以上源码的追踪均是基于: [fossies.org](https://fossies.org/dox/R-4.4.1/index.html)。
 
 
-### Control randomness (optional)
+### Control randomness
 
 #### Why do we need and how to control randomness
 
@@ -609,23 +612,45 @@ if (replace || k < 2) {
 
 - `integer`: a single value, interpreted as an integer.
 
-R 里面所有与随机行为有关的代码（如`sample()`，`rnorm()`，`runif()`）本质上都是伪随机，都是通过激活某种随机数生成器（random number generator， RNG）来实现的。可以简单地认为每次激活 RNG 运行都需要给定一个起点，如果起点一致，那么两次随机行为的结果就是完全一致的。`set.seed()`就是用来控制每次激活 RNG 时使用的起点——随机数种子（seed）。
-
+R 里面所有与随机行为有关的代码（如`sample()`，`rnorm()`，`runif()`）本质上都是伪随机，都是通过激活某种随机数生成器（random number generator， RNG）来实现的。如果把 RNG 理解为一个函数 $y=f(x)$，可以简单地认为每次激活 RNG 都需要给定一个起点$x$，最终的$y$就是随机行为。如果起点一致，那么两次随机行为的结果就是完全一致的。`set.seed()`就是用来控制每次激活 RNG 时使用的起点——随机数种子（seed）。
 ```{r setseed_simple}
-# 设定种子之前，结果不同
+# set.seed 之前，结果不同
 rnorm(5) 
 rnorm(5)
-# 设定种子之后，结果相同
+# set.seed 之后，结果相同
 set.seed(1)
 rnorm(5)
 set.seed(1)
 rnorm(5)
 ```
 
+学会了`set.seed()`，就可以来整点活了
+```{r season_greeting}
+set.seed(2219868)
+greeting <- sample(letters,5,T)
+set.seed(6024)
+year <- sample(0:9,4,T)
+cat(paste(greeting, collapse = ""), paste(year, collapse = ""))
+```
+以上代码改编自 [brrybk in the rstatsmemes subreddit](https://www.reddit.com/r/rstatsmemes/comments/zmpc8d/seasons_greetings/)。思考一下，如何令第 2 个 `sample()` 产生出 `[1] 2 0 2 4`?
+```{r season_greeting_solution, eval = FALSE, include = FALSE}
+i <- 1
+while (i < 1e7) {
+  set.seed(i)
+  nums <- sample(0:9, size = 4, replace = TRUE)
+  if (all(nums == c(2, 0, 2, 4))) {
+    print(i)
+    break
+  } else {
+    i <- i + 1
+  }
+}
+```
+
 
 #### A slightly deeper understanding of `set.seed()` (optional)
 
-在 R 中，所有 seeds 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样，这里只讲 R 中默认的 RNG —— Mersenne-Twister。
+在 R 中，所有 seeds 都存储在`.Random.seed`这个 vector 里，不同 RNG 产生的`.Random.seed`不一样。R 中默认的 RNG 是 Mersenne-Twister。Mersenne-Twister 同时是众多编程语言（[R](https://www.stat.ethz.ch/R-manual/R-devel/library/base/html/Random.html), [Python](https://docs.python.org/3/library/random.html)，[C++11](https://en.cppreference.com/w/cpp/numeric/random/mersenne_twister_engine)）的默认 RNG，其本质上是一个算法，可以从数学上理解，但过于复杂。下面将从代码的角度来简单讲解 Mersenne-Twister 是如何在 R 中实现的。
 
 Mersenne-Twister 对应的`.Random.seed`是一个长度为 626 的 integer vector，第 1 个位置上存储的是代表 RNG 种类的编号，第 2 个位置上储存的是下一次激活 RNG 将使用的 seed 位置序号，第 3-626 个位置上储存的是 624 个 seeds。
 ```{r seed}
@@ -654,9 +679,9 @@ runif(2) # 共有 2 次随机行为
 runif(3) # 共有 3 次随机行为
 .Random.seed[1:5]
 ```
-但不难看出以上代码的运行结果似乎和前述的基本流程有所出入，`.Random.seed`在执行`runif(1)`后会改变，然后就固定不变了。下面来解释一下背后的原因。
+但不难看出以上代码的运行结果似乎和前述的基本流程有所出入，`.Random.seed`在执行`runif(1)`后会改变，然后就固定不变了。这和 Mersenne-Twister 的算法有关，下面来解释一下背后的原因。
 
-R 中`runif(1)`本质上是调用 C 语言函数`random2()` 1 次。在生成随机数前，`random2()`的第 [188](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 行会先执行`GetRNGstate()`，该函数的定义详见 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#397) 的第 397-422 行。其中，第 401-406 行表明`GetRNGstate()`会先尝试获取已经存在的 seeds（即由`set.seed(1)`更新的`.Random.seed`的第 2-626 个元素），如果没有则此时会自动生成一组随机的 seeds：
+如\@ref(runif-is-everyrthing)所述，R 中`runif(1)`本质上是调用 C 语言函数`random2()` 1 次。在生成随机数前，`random2()`的第 [188](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/library/stats/src/random.c#164) 行会先执行`GetRNGstate()`，该函数的定义详见 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#397) 的第 397-422 行。其中，第 401-406 行表明`GetRNGstate()`会先尝试获取已经存在的 seeds（即由`set.seed(1)`更新的`.Random.seed`的第 2-626 个元素），如果没有则此时会自动生成一组随机的 seeds：
 ```{c eval = FALSE}
 SEXP seeds;
 
@@ -665,12 +690,12 @@ seeds = GetSeedsFromVar();
 if (seeds == R_UnboundValue) {
   Randomize(RNG_kind);
 ```
-后续就会调用`unif_rand()`，该函数的定义详见 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#109) 的第 109-183 行。`unif_rand()`中激活 R 的默认 RNG  [136-137](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#136) 的代码在第 136-137 行：
+后续就会调用`unif_rand()`，该函数的定义详见 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#109) 的第 109-183 行。`unif_rand()`中激活 Mersenne-Twister 的代码在第 [136-137](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#136) 行：
 ```{c eval = FALSE}
 case MERSENNE_TWISTER:
 return fixup(MT_genrand());
 ```
-其中，`fixup()`函数的定义在 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#100) 的第 100-106 行，不难看出这个函数只是用来保证生成出来的随机数不会恰好是 0 或 1：
+其中，`fixup()`函数的定义在 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#100) 的第 100-106  行，如下：
 ```{c eval = FALSE}
 #define i2_32m1 2.328306437080797e-10/* = 1/(2^32 - 1) */
 static double fixup(double x)
@@ -681,7 +706,7 @@ static double fixup(double x)
   return x;
 }
 ```
-因此，负责生成随机数的核心函数是`MT_genrand()`，其定义在 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#687) 的第 687-732 行。下面只摘出其中关键的部分并加以注释：
+不难看出这个函数只是用来保证生成出来的随机数不会恰好是 0 或 1。因此，`unif_rand()`中负责生成随机数的核心函数是`MT_genrand()`，其定义在 [RNG.c](https://github.com/SurajGupta/r-source/blob/a28e609e72ed7c47f6ddfbb86c85279a0750f0b7/src/main/RNG.c#687) 的第 687-732 行。下面只摘出其中关键的部分并加以注释（`//`部分）：
 ```{c eval = FALSE}
 static Int32 dummy[628]; // allow for optimizing compilers to read over bound
 
@@ -750,7 +775,7 @@ static double MT_genrand(void)
   return ( (double)y * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
 }
 ```
-所以，当`set.seed(1)`重置`.Random.seed`第 2 个位置上记录的 seed 位置序号为 624 后，第一次激活 RNG 时就会把 624 个 seeds 全部重新改变一次。此后再激活 RNG 时就会因为 seed 位置序号不满足条件（`mti<=N`）自动跳过改变所有 seeds 的语句，seeds 就保持不变。可想而知，`set.seed(1)`后每激活 RNG 624 次，所有的 624 个 seeds 就会被自动更新：
+所以，当`set.seed(1)`重置`.Random.seed`第 2 个位置上记录的 seed 位置序号为 624 后，第一次激活 Mersenne-Twister 时就会把 624 个 seeds 全部重新改变一次。此后再激活 Mersenne-Twister 时就会因为 seed 位置序号不满足条件（`mti<=N`）自动跳过改变所有 seeds 的语句，seeds 就保持不变。可想而知，`set.seed(1)`后每激活 Mersenne-Twister 624 次，所有的 624 个 seeds 就会被自动更新：
 ```{r seed_autoupdate}
 set.seed(1)
 .Random.seed[1:5]
@@ -759,7 +784,7 @@ do_not_display <- runif(624)
 do_not_display <- runif(624)
 .Random.seed[1:5]
 ```
-这种周期性自动更新全部 seeds 的设定可以避免 RNG 生成出重复的随机数。不过，由于`set.seed(1)`的存在，所以相当于人为设定了 seeds 自动更新的起点。因此，只要`set.seed(integer)`中的`integer`不变，那后续所有含有随机行为的代码使用的 seed 顺序就是固定的。只要代码的执行顺序不变，即便是随机抽样也是可以完美重复出来：
+这种周期性自动更新全部 seeds 的设定可以避免 Mersenne-Twister 生成出重复的随机数。不过，由于`set.seed(1)`的存在，所以相当于人为设定了 seeds 自动更新的起点。因此，只要`set.seed(integer)`中的`integer`不变，那后续所有含有随机行为的代码使用的 seed 顺序就是固定的。只要代码的执行顺序不变，即便是随机抽样也是可以完美重复出来：
 ```{r setseed_recommended_usage}
 set.seed(1)
 df1 <- iris[sample(nrow(iris), 3), ]
@@ -772,7 +797,7 @@ rnd2 <- runif(3)
 df2
 rnd2
 ```
-需要注意的是，R 默认的 RNG Mersenne-Twister 会在一些特殊的情况下出现大面积重复：
+需要注意的是，Mersenne-Twister 会在一些特殊的情况下出现大面积重复：
 ```{r}
 set.seed(0)
 seeds_1 <- .Random.seed[-1]
@@ -782,7 +807,11 @@ seeds_2 <- .Random.seed[-1]
 runif(10)
 sum(seeds_1 %in% seeds_2)
 ```
-由于无法准确预测什么时候会出现这个问题，因此建议不要频繁修改 `set.seed()`。在 simulation 中，单次重复实验使用一次 `set.seed(integer)`，或者可以考虑自定义一段代码来自动调整`integer`，以下是一个简单的示例：
+由于无法准确预测什么时候会出现这个问题，因此可以考虑：
+
+1. 使用其他 RNG，
+2. 在 simulation 自定义一段代码来自动调整`integer`，以下是一个简单的示例：
+
 ```{r eval = FALSE}
 seed_old <- .Random.seed[-1]
 int <- 0
@@ -877,19 +906,20 @@ data_subset2 <- data_ori[seq(2, nrow(data_ori), 2), ]
 
 `rep(x, times = 1, length.out = NA, each = 1)`，生成重复序列。
 ```{r operation_others_rep}
-rep(0, 3)
-rep(c(1, 2, 3), 3)
-rep(c(1, 2, 3), 3, length.out = 10)
-rep(c(1, 2, 3), 3, length.out = 30, each = 3)
+rep(0, times = 3)
+rep(c(1, 2, 3), times = 3)
+rep(c(1, 2, 3), times = 3, length.out = 10)
+rep(c(1, 2, 3), times = 3, length.out = 30, each = 3)
 ```
 
 `rep()`可以巧妙地和`subsetting`的操作相结合，来实现快速复制矩阵。例如以一个 \(2\times2\) 的矩阵为最小 element，复制出一个 \(2 \times 2\) 的大矩阵：
 ```{r operation_others_repmatrix}
-m1 <- matrix(1:4, 2, 2)
-m1[rep(1:nrow(m1), 2), rep(1:ncol(m1), 2)]
+m1 <- matrix(1:4, nrow = 2, ncol = 2)
+m1[rep(1:nrow(m1), times = 2), rep(1:ncol(m1), times = 2)]
 ```
 
 来源：[R中是否有复制平铺矩阵的函数](https://d.cosx.org/d/107403-107403)
+
 
 ### Concatenate strings 
 
@@ -924,6 +954,7 @@ write.table(data_subset2, filenames[2])
 ```
 
 只要是需要按照一定的规律生成字符串，就要想到`paste()`。
+
 
 ### Print to console
 
