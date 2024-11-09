@@ -750,7 +750,7 @@ a. embedded on the Grit scale—“Select‘Somewhat like me’ for this stateme
 b. embedded on the Beck Depression Inventory—“1 – Select this option,” and 
 c. embedded on the Borderline Personality Inventory—“Select ‘Yes’ for this statement.”
 
-[A more detailed introduction on attention check: Prolific's Attention and Comprehension Check Policy](https://researcher-help.prolific.co/hc/en-gb/articles/360009223553-Prolific-s-Attention-and-Comprehension-Check-Policy)
+[A more detailed introduction on attention check: Prolific's Attention and Comprehension Check Policy](https://researcher-help.prolific.com/en/article/fb63bb)
 
 ```{r}
 df <- data.frame(
