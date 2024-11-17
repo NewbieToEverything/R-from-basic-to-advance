@@ -1,8 +1,8 @@
 # Basic: control flow {#control-flow}
 
-到目前为止，本课程中写过的所有代码都是线性执行的，即按从头到尾的顺序执行所有语句。只使用这种单向控制流，可以编写一些非常简单的程序，这种写法可以视作是不对代码的执行顺序做任何人为的控制。
+到目前为止，本课程中写过的所有代码都是线性执行的，即按从头到尾的顺序执行所有语句。只使用这种线性执行的代码，可以编写一些非常简单的程序，这种写法可以视作是不对代码的执行顺序做任何人为的控制。
 
-简单来讲，控制流（control flow）就是控制代码的流程，通过一定方式控制代码执行的顺序。Control flow 能够极大地增加代码的功能性，是现代编程语言的经典成分，绝大多数编程语言中都有控制流的模块。
+简单来讲，控制流（control flow）就是控制代码的流程，通过一定方式人为控制代码执行的顺序。Control flow 能够极大地增加代码的功能性，是现代编程语言的经典成分，绝大多数编程语言中都有控制流的模块。
 
 Control flow 可以分为 conditional flow （条件流）和 loop （循环）两大类。
 
@@ -151,7 +151,7 @@ In if (rnd > 0.95) { :
 Error in if (rnd > 0.95) { : the condition has length > 1
 ```
 
-因此，如果是需要依据`expr`中所有元素的对比结果来作出最终判断，那么正确的做法是运用`all(x)`和`any(x)`，其中`x`为一个 logical vector。如果`x`中所有的值都是`TRUE`，那么`all(x)`的结果为`TRUE`，反之则是`FALSE`。如果`x`中所有的值都是`FALSE`，`any(x)`的结果才是`FALSE`，反之都是`TRUE`。
+因此，如果是需要依据`cond`中所有元素的对比结果来作出最终判断，那么正确的做法是运用`all(cond)`和`any(cond)`。如果`cond`中所有的值都是`TRUE`，那么`all(cond)`的结果为`TRUE`，反之则是`FALSE`。如果`cond`中所有的值都是`FALSE`，`any(cond)`的结果才是`FALSE`，反之都是`TRUE`。
 
 ```{r if_logvec_cond}
 rnd <- runif(3)
@@ -173,7 +173,7 @@ if (all(rnd > 0.95)) {
 ifelse(test, yes, no)
 ```
 
-其中，`test`表示对某个输入 object 的所有元素的检验，检验的结果是和该 object 同样大小的一个 logical object ；`yes`是 object 的元素中检测为`TRUE`时对应的返回值；`no`是检测结果为`FALSE`时的返回值。`yes`和`no`可以是一行语句，其执行结果必须和输入的 object 同样大小；如果不是，则会触发 recycling rule,（详见\@ref(byrow-recycling)），直至满足该限制。
+其中，`test`是对某个输入 object 所有元素是否符合某种条件的检验（通常是 relational operation，详见 \@ref(relational-operation)，或`isxx()`），检验的结果是和该 object 同样大小的一个 logical object；`yes`是该 logical object 中`TRUE`对应的`ifelse()`返回值；`no`是`FALSE`对应的`ifelse()`返回值。`yes`和`no`必须和输入的 object 同样大小；如果不是，则会触发 recycling rule,（详见\@ref(byrow-recycling)），直至满足该限制。
 
 例如：
 ```{r ifelse}
@@ -191,28 +191,84 @@ print("将所有奇数变成偶数，偶数维持不变")
 ifelse(m1 %% 2 == 0, m1, m1 + 1)
 ```
 
-### `switch` (optional)
+### `switch`
 
 <img style = "display: block; margin: auto;" src="images/flow chart switch.png" width="70%"/>
 
-`switch`结构可以视作是多个`cond`的`if`结构的等价写法，其基本语法结构如下：
+`switch`可以视作是多个`cond`的`if`结构的等价写法，其基本语法结构如下：
 ```{r eval = FALSE}
-switch (object,
+switch (
+  object,
   case1 = expr1,
-  case2 = expr2
+  case2 = expr2,
+  ...
 )
 ```
 
-其中，`object`的不同值，对应不同的`case`，例如：
+其中，`object`是一个长度为 1 的 vector，其不同的值对应不同的`case`。根据`object`究竟是不是 character string 又分成两种情况：
 
-```{r switch}
-input <- 1
-switch(input,
-  "1" = print("a"),
-  "2" = print("b"),
-  "3" = print("c"),
-  stop("No pre-set output for current `input`")
+- `object` 是 character string，那么`object`的值会精确匹配`case`，`swtich`会执行匹配的`case`对应的`expr`，此时，所有的`expr`必须提供`case`作为 argument name，例如：
+
+```{r switch_char}
+input <- "b"
+switch(
+  input,
+  a = 1,
+  b = 2,
+  c = 3
 )
+```
+此时，所有的`expr`必须提供`case`作为 argument name，否则就会报错，
+```{r switch_char_no_argument_name, error=TRUE}
+input <- "b"
+switch(
+  input,
+  1 + 1,
+  b = 2 + 2,
+  3 + 3
+)
+```
+如果匹配到的`case`没有提供`expr`，则会顺延，直到下一个有`expr`的`case`，
+```{r switch_char_missing_expr}
+input <- "b"
+switch(
+  input,
+  a = 1,
+  b = ,
+  c = ,
+  d = 4
+)
+```
+
+- `object` 是非 character string，会先被强制转换为 integer ，称之为`object_int`，转换的同时会输出一个 warning。假定一共有 n 个`case`s，如果`object_int`$\in[1,n-1]$，那么`swtich`会执行第`object_int`个`case`对应的`expr`，不论该`expr`是否有提供`case`作为 argument name。
+
+这种转换一般会发生在 element type 为 factor 的 object 上。要特别注意的是，factor 转换为 integer 时是根据 levels 来执行的，例如：
+
+```{r switch_factor}
+input <- factor(c("a", "b", "c"), levels = c("c", "b", "a"))
+switch(
+  input[1],
+  a = "yo",
+  b = "hey",
+  c = "ha"
+)
+# no argument name for all 3 exprs
+input <- factor(c("a", "b", "c"), levels = c("c", "b", "a"))
+switch(
+  input[1],
+  "yo",
+  "hey",
+  "ha"
+)
+# equivalent to
+input <- factor(c("a", "b", "c"), levels = c("c", "b", "a"))
+switch(
+  input[1],
+  "1" = "yo",
+  "2" = "hey",
+  "3" = "ha"
+)
+# number can not be directly used as argument name, has to be quoted
 ```
 
 `switch`结构也可以通过 Snippets 快速键入：
@@ -236,12 +292,12 @@ for(var in seq) {
 
 例如：
 ```{r for_basic}
-for (i in c("A", "d", "r")) {
+for (i in c(3, 100, 10)) {
   print(i)  # 必须用 print 才能输出
 }
 ```
 
-其中`seq`为`1:3`，表示一个长度为 3 的 vector，所有 elements 会根据位置上的先后顺序被 loop，第 1 次 loop 就把`seq`的第 1 个 element 取出来赋值给`var`，即`i`，然后执行`expr`。依次 loop 下去，直到`seq`的所有 elements 都被 loop 完毕。
+其中`seq`为`c(3, 100, 10)`，表示一个长度为 3 的 vector，所有 elements 会根据位置上的先后顺序被 loop，第 1 次 loop 时会创建`var`，然后把`seq`的第 1 个 element （例子中为`3`）取出来赋值给`var`（例子中为`i`），再执行`expr`（例子中为`print(i)`）。依次 loop 下去，直到`seq`的所有 elements 都被 loop 完毕（上述例子的`seq`长度为 3，所以会 loop 3 次）。
 
 `for`结构也可以通过 Snippets 快速键入：
 
@@ -249,10 +305,10 @@ for (i in c("A", "d", "r")) {
 
 `for`结构有以下使用技巧\\注意事项：
 
-#### `seq` can be any object
+#### `seq` can be any subsettable object
 
 ```{r for_loop_over_name}
-# character
+# character vector
 df <- data.frame(
   score_last = c(100, 88, 93), 
   score_current = c(99, 96, 77)
@@ -264,7 +320,7 @@ for (i in names(df)) {
 ```
 
 ```{r for_loop_over_position}
-# numeric
+# numeric vector
 df <- data.frame(
   score_last = c(100, 88, 93), 
   score_current = c(99, 96, 77)
@@ -276,7 +332,7 @@ for (i in 1:length(df)) {
 ```
 
 ```{r for_loop_over_element01}
-# numeric
+# data.frame
 df <- data.frame(
   score_last = c(100, 88, 93), 
   score_current = c(99, 96, 77)
@@ -288,7 +344,7 @@ for (i in df) {
 ```
 
 ```{r for_loop_over_element02}
-# numeric
+# numeric matrix
 m1 <- matrix(1:16, nrow = 4, ncol = 4)
 cumsum_m1 <- 0
 for (i in m1) {
@@ -299,7 +355,7 @@ print(cumsum_m1)
 ```
 
 ```{r for_loop_over_element03}
-# numeric
+# list
 l1 <- list(1:2, "a", list(1, 2, 3))
 for (i in l1) {
   print(i)
@@ -367,7 +423,7 @@ length(c())
 1:length(c())  # equivalent to 1:0
 ```
 
-但显然，当想要循环的对象长度为 0 时，应该是不循环才更符合逻辑，所以使用`seq_along()`会更符合预期，
+但显然，当想要循环的对象长度为 0 时，应该是不循环才更符合逻辑，所以使用`seq_along()`会使得代码的执行结果更符合预期，
 ```{r for_seq_length_equal_to_0_seq_along}
 means <- c()
 out_seqalong <- vector("list", length(means))
@@ -382,7 +438,7 @@ out_seqalong
 
 和`seq`不同，`var`不是一个 anonymous object，它随着`for`结构的开始而出现，但不会随着`for`结构的结束而消亡，所以有两个特点：
 
-- `var`在当次 loop 内可以更改，但是不会影响下次 loop。
+- `var`在当次 loop 内可以更改，但是下次 loop 时会被 for 结构自动更新。
 
 ```{r for_var_assign_during_current_loop}
 for (i in 1:5) {
@@ -526,9 +582,9 @@ tStest(v)
 
 #### Initialize output object
 
-输出结果（`for`结构中每次 loop 改动的结果变量）需提前初始化。
+结果 object （`for`结构中每次循环改动的 object）需提前初始化。
 
-在前面的例子中，`medians_col`就是`for`结构的输出结果，`medians_col <- vector(mode = "integer", length = 3)`就是初始化，即在`for`结构开始前给`medians_col`赋值，**并且大小也根据预期提前设定好**，这样`for`结构可以顺利执行，并且执行效率最高。反之，如果不提前初始化结果变量，那么在`for`结构执行时，global environment 里是没有`medians_col`的，报错并终止：
+在实训 3-3 中的第 4 题第 1 小问的例子中，`ave_kill_2`就是`for`循环的结果 object，`ave_kill_2 <- rep(0, length(type_hero))`就是初始化，即在`for`循环开始前创建`ave_kill_2`并赋值，**并且大小也根据预期提前设定好**，这样`for`循环可以顺利执行，并且执行效率最高。反之，如果不提前初始化结果 object，那么在`for`循环执行时，`Global environment`里是没有`ave_kill_2`的，报错并终止：
 ```{r for_var_preset_output, error = TRUE}
 rm(medians_col)
 n_ob <- 1000
@@ -556,7 +612,7 @@ for (i in 1:3) {
 }
 ```
 
-- `break`：跳出当前 loop 结构
+- `break`：跳出当前执行的`for`结构
 
 ```{r for_break}
 for (i in 1:3) {
@@ -565,7 +621,7 @@ for (i in 1:3) {
 }
 ```
 
-`next`和`break`适用于所有三种 loop 结构。
+`next`和`break`适用于本章内的所有三种 loop 结构。
 
 
 #### The recommended way of using `for`
@@ -608,10 +664,10 @@ identical(df_centered_verbose, df_centered_compact)
 
 #### The best scenario to use `for`
 
-`for`结构最适合的任务情境应当是前一次 loop 和后一次 loop 有依赖关系，这种情况只有按顺序执行的 loop 结构才能够处理。不同次 loop 之间没有任何联系彼此独立时，都可以有替代`for`结构的写法。
+`for`最适合的任务情境应当是前一次 loop 和后一次 loop 有依赖关系，这种情况只有按顺序执行的 loop 结构才能够处理。不同次 loop 之间没有任何联系彼此独立的任务可以有替代 loop 结构的写法。
 
-Loops 间存在联系的示例：
-```{r}
+Loops 间存在联系：
+```{r consecutive_loop}
 num_ite <- 20
 a <- rep(0, num_ite)
 for (i in 1:num_ite) {
@@ -620,6 +676,38 @@ for (i in 1:num_ite) {
   }
 }
 a
+```
+
+Loops 间不存在联系：
+```{r independent_loop}
+# column-wise centering
+set.seed(123)
+n_col <- 10
+n_element <- 1e4
+rnd_norm <- matrix(
+  rnorm(n_element), 
+  nrow = n_element/n_col, 
+  ncol = n_col
+)
+# solution using for loop
+time_begin <- Sys.time()
+rnd_norm_center_loop <- rnd_norm
+for (i in 1:n_col) {
+  rnd_norm_center_loop[, i] <- rnd_norm[, i] - mean(rnd_norm[, i])
+}
+time_end <- Sys.time()
+print(time_end - time_begin)
+# solution, vectorized, using subsetting only, faster
+time_begin <- Sys.time()
+rnd_norm_mean <- matrix(
+  colMeans(rnd_norm), 
+  nrow = 1, 
+  ncol = n_col
+)[rep(1, times = nrow(rnd_norm)), ]
+rnd_norm_center_vectorize <- rnd_norm - rnd_norm_mean
+time_end <- Sys.time()
+print(time_end - time_begin)
+identical(rnd_norm_center_loop, rnd_norm_center_vectorize)
 ```
 
 ### `while` {#while}
@@ -634,9 +722,9 @@ while(cond) {
   expr
 }
 ```
-`while`结构执行前，当`cond`的执行结果为`TRUE`时，才会进入`while`结构，否则会直接跳过。进入`while`结构后，执行`expr`，然后会检查`cond`的执行结果是否为`TRUE`，是则继续下一次 loop，否则跳出`while`结构。
+`while`结构执行时会检测`cond`的执行结果是否为`TRUE`，只有是`TRUE`才会开始一次 loop 并执行`expr`，执行完毕后当次 loop 结束，开始下次 loop，又会检查`cond`的执行结果是否为`TRUE`，是`TRUE`则继续下一次 loop，是`FALSE`则跳出`while`结构。
 
-在使用`while`结构的时候要注意，一定要确保在`expr`中，`cond`会被更改，并酌情设定退出机制，否则非常容易陷入 forever loop。
+在使用`while`结构的时候要注意，一定要确保在`expr`中`cond`会被更改，并酌情设定退出机制，否则非常容易陷入 forever loop。
 
 ```{r dead_while, eval = FALSE}
 # forever loop
@@ -646,8 +734,7 @@ while (i <= 5) {
 }
 ```
 
-
-```{r while}
+```{r while_recommended_usage}
 # make sure:
 #   1. cond is modified within each loop
 #   2. loop can always be jumped out of
@@ -670,7 +757,7 @@ print(count)
 
 ### `repeat`
 
-`repeat`结构同样也可以视作是`for`+`if`。
+`repeat`可以视作是不同写法的`for`。
 
 <img style = "display: block; margin: auto;" src="images/flow chart repeat.jpg" width="70%"/>
 
@@ -696,7 +783,7 @@ repeat {
 考虑到`while`和`repeat`结构在不够谨慎的情况下都有陷入 forever loop 的风险，而二者的本质作用都是执行多次 loop，和`for`结构并无差异，因此，在绝大多数情况下都建议使用`for`结构。
 
 例如前文展示在使用`while`结构时避免 forever loop 的代码完全可以用如下`for`结构替代：
-```{r while_to_for}
+```{r dead_while_to_for}
 set.seed(123)
 rnd_unif <- runif(1, min = -1, max = 1)
 cum_sum_rnd_unif <- 0
@@ -707,12 +794,11 @@ for (i in 1:n_loop) {
 }
 ```
 
-
 ## Recap
 
-1. 不论是使用`if`结构还是`switch`结构，在构建包含多个互斥`cond`s 的结构时都需要将所有的情况都考虑到；
+1. 在构建包含多个互斥`cond`s 的`if`结构时最好将所有的情况都考虑到；
 2. `if`结构中，`cond`为 logical vector 时，根据需要运用`all()`（相当于`&`）和`any()`（相当于`|`）；
-3. `ifelse()`适用于快速检验 vector、matrix、array、data.frame 中的所有 elements，是`if else`的向量化写法；
-4. `for`结构中，输出结果需初始化；
+3. `ifelse()`适用于快速检验 vector、matrix、array、data.frame 中的所有 elements 是否满足指定条件并输出相应内容，是`if else`的向量化写法；
+4. `for`结构中，结果 object 需提前初始化；
 5. loop 结构中，`next`跳过当前 loop，`break`跳出整个 loop 结构；
 6. 必须要使用 loop 结构时，尽量使用`for`结构。
