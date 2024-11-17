@@ -112,6 +112,19 @@ log(1)
 log(10, base = 10)
 ```
 
+#### Contingency table
+
+`table(...)`，统计频率，`...`是一个或多个 objects。
+
+```{r table}
+df <- data.frame(
+  gender = c("female", "male", "female", "male", "female"),
+  pass = c(1, 0, 0, 1, 1)
+)
+table(df$gender)
+table(df$gender, df$pass)
+```
+
 #### Others
 
 - Square root: `sqrt(x)`，即\(\sqrt{x}\)。
@@ -126,7 +139,7 @@ sign(c(-1, 2, -sqrt(2)))
 
 - Transpose
 
-`t(x)`，即\(x'\)或\(x^T\)，将`x`转置（沿主对角线反转，行列互换），`x`可以是 matrix 或 data.frame。
+`t(x)`，即\(x'\)或\(x^T\)，将`x`转置（沿主对角线翻转，行列互换），`x`可以是 matrix 或 data.frame。
 
 ```{r operation_arithmetic_t}
 a <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3, ncol = 2)
@@ -147,7 +160,7 @@ data$Area <- log(data$Area, base = 10)
 
 ## Relational and Logical operators
 
-### Relational operators
+### Relational operators {#relational-operation}
 
 `>`，`<`，`>=`，`<=`，`==`，`!=`。这些 operators 返回的结果都是 logical：
 ```{r operation_logical}
@@ -175,6 +188,29 @@ is.na(c(1, 2, NA))
 is.nan(c(1, 2, NaN))
 is.null(c(1, 2, NULL))
 ```
+
+此外，因为`==`返回的是各 element 位置上比较的结果，所以：
+
+- 如果只想知道两个 objects 是否完全相同，即所有 elements 都一样，则需要加`all()`，或者使用`identical()`，
+- 如果只想知道两个 objects 是否部分相同，即只要至少有一个 位置上的 elements 相同，则需要加`any()`。
+
+```{r identical_objects}
+a <- 1:3
+b <- a
+a == b
+all(a == b)
+identical(a, b)
+any(a == b)
+```
+`identical`和`==`的工作原理都是比较两个 objects 是否绝对相同，如果想要比较两个 objects 是不是几乎相同需使用`all.qual()`：
+```{r all_equal}
+a <- c(0.1111111111, 1, 2, 3)
+b <- c(0.1111111112, 1, 2, 3)
+a == b
+identical(a, b)
+all.equal(a, b)
+```
+比较两个 numerical objects 时，只要两者的任意一对 elements 的差异不超过`1.5e-8`，`all.equal()`就会认为这两个 objects 几乎相同。
 
 Relational operators 在 subsetting 的进阶写法中十分常用。例如，
 ```{r relation_op_subset}
@@ -360,9 +396,9 @@ sort(a)
 sort(a, decreasing = TRUE)
 ```
 
-- `order(..., decreasing = FALSE)`，`...`是一个或多个`object`。`decreasing`是可选`argument`，`decreasing = TRUE`表示按照降序排序列。
+- `order(..., decreasing = FALSE)`，`...`是一个或多个 objects。`decreasing`是可选 argument，`decreasing = TRUE`表示按照降序排序列。
 
-`order()`输出的其实是`object`中元素位置的具体调整方式，根据该方式调整以后就实现了排序（升序或降序）。所以，`order()`实际上给出的是位置信息。
+`order()`输出的其实是 object 中元素位置的具体调整方式，根据该方式调整以后就实现了排序（升序或降序）。所以，`order()`实际上给出的是位置信息。
 
 a. 无重复元素
 
@@ -376,7 +412,7 @@ order(a, decreasing = TRUE)
 
 b. 有重复元素
 
-当输入的单个`object`有重复元素（即`ties`，表示一个独特的值同时有多个位置索引）时，默认是按照元素出现的先后顺序来排序，
+当输入的单个 object 有重复元素（即 ties，表示一个独特的值同时有多个位置索引）时，默认是按照元素出现的先后顺序来排序，
 ```{r operation_order_ties}
 a <- c(5, 1, 8, 1)
 order(a)
@@ -391,7 +427,7 @@ order(score, id)
 order(score, id, decreasing = TRUE)
 ```
 
-总结一下，当输入 1 个 object 时，`order()`排序的是这个`object`；当输入多个`object`时（这些`object`都必须是同样长度），`order()`排序的依旧是第一个`object`，只不过该 object 中的重复元素是以第 2 个 object 中对应位置上的元素大小为依据，若这些元素依旧是重复的，则按照第 3 个 object 中对应位置上的元素大小为依据，依此类推。
+总结一下，当输入 1 个 object 时，`order()`排序的是这个`object`；当输入多个 objects 时（这些 objects 都必须是同样长度），`order()`排序的依旧是第一个 object，只不过该 object 中的重复元素是以第 2 个 object 中对应位置上的元素大小为依据，若这些元素依旧是重复的，则按照第 3 个 object 中对应位置上的元素大小为依据，依此类推。
 
 `order()`对字符也有效，默认升序，数字按从小到大，英文按字母，中文按拼音顺序，三者的优先级是数字 > 英文字母 > 中文拼音：
 ```{r operation_order_letter}
@@ -437,7 +473,7 @@ mean(vec_rnd)
 sd(vec_rnd)
 ```
 
-其他类似的专门用来生成指定分布随机数的函数还有：
+其他类似的专门用来生成指定分布随机数的常用函数还有：
 
 - `rt()`，生成服从指定$t$分布随机数；
 - `rchisq()`，生成服从指定$\chi^2$分布随机数；
@@ -469,11 +505,12 @@ sample(
 )
 ```
 
-随机抽样的一个典型的应用场景是自助法（Bootstrap），从样本中随机取出多批指定大小的数据，当作是平行样本。以英雄联盟数据集为例：
+随机抽样的一个典型的应用场景是自助法（bootstrap），从样本中随机取出多批和原始数据同样大小的 bootstrap 数据集。以英雄联盟数据集为例：
 ```{r operation_others_sample_bootstrap, warning = TRUE}
 library(openxlsx)
 data_ori <- read.xlsx("F:/Nutstore backup/R/codes/RBA/data/Arena of Valor_midterm dataset.xlsx")
-data_sample <- data_ori[sample(nrow(data_ori), 30), ]
+n <- nrow(data_ori)
+data_sample <- data_ori[sample(n, size = n, replace = TRUE), ]
 ```
 
 
@@ -597,8 +634,6 @@ if (replace || k < 2) {
 ```
 其中负责生成随机数的核心函数依旧是`unif_rand()`。
 
-以上源码的追踪均是基于: [fossies.org](https://fossies.org/dox/R-4.4.1/index.html)。
-
 
 ### Control randomness
 
@@ -627,18 +662,18 @@ rnorm(5)
 学会了`set.seed()`，就可以来整点活了
 ```{r season_greeting}
 set.seed(2219868)
-greeting <- sample(letters,5,T)
+greeting <- sample(letters, size = 5, replace = TRUE)
 set.seed(6024)
-year <- sample(0:9,4,T)
+year <- sample(0:9, size = 4, replace = TRUE)
 cat(paste(greeting, collapse = ""), paste(year, collapse = ""))
 ```
-以上代码改编自 [brrybk in the rstatsmemes subreddit](https://www.reddit.com/r/rstatsmemes/comments/zmpc8d/seasons_greetings/)。思考一下，如何令第 2 个 `sample()` 产生出 `[1] 2 0 2 4`?
+以上代码改编自 r/statsmemes 中的 [Season's greetings](https://www.reddit.com/r/rstatsmemes/comments/zmpc8d/seasons_greetings/)，作者是 brrybk。思考一下，如何令第 2 个 `sample()` 产生出 `[1] 2 0 2 4`?
 ```{r season_greeting_solution, eval = FALSE, include = FALSE}
 i <- 1
 while (i < 1e7) {
   set.seed(i)
-  nums <- sample(0:9, size = 4, replace = TRUE)
-  if (all(nums == c(2, 0, 2, 4))) {
+  seq_num <- sample(0:9, size = 4, replace = TRUE)
+  if (all(seq_num == c(2, 0, 2, 4))) {
     print(i)
     break
   } else {
@@ -800,12 +835,13 @@ rnd2
 需要注意的是，Mersenne-Twister 会在一些特殊的情况下出现大面积重复：
 ```{r}
 set.seed(0)
-seeds_1 <- .Random.seed[-1]
+seeds_1 <- .Random.seed[-(1:2)]
 runif(10)
 set.seed(1)
-seeds_2 <- .Random.seed[-1]
+seeds_2 <- .Random.seed[-(1:2)]
 runif(10)
 sum(seeds_1 %in% seeds_2)
+rbind(seeds_1, seeds_2)[, 1:10]
 ```
 由于无法准确预测什么时候会出现这个问题，因此可以考虑：
 
@@ -828,6 +864,7 @@ while (is_change) {
 }
 ```
 
+本节内R内置函数的 C 源码的追踪均是基于: [fossies.org](https://fossies.org/dox/R-4.4.1/index.html)。
 
 ## Others
 
