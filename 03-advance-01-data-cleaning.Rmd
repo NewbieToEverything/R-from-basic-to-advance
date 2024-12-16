@@ -1,0 +1,939 @@
+# Advance: data-cleaning {#data-cleaning}
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE, 
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "",
+  fig.width = 3,
+  fig.height = 3.5
+)
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(plotly)
+})
+data_dirty_01 <- yjc::simu_dirty_survey_data(tag_missing = 9999)$data
+data_dirty_02 <- yjc::simu_dirty_survey_data(tag_missing = 999)$data
+# write.table(data_dirty_01, filename_data_dirty_01)
+# write.table(data_dirty_02, filename_data_dirty_02)
+# }
+set.seed(123)
+n_examinee <- 100
+# different subjects measured using identical variables
+data_difsub_idevar_01 <- 
+  sapply(1:6, \(x) sample(5, n_examinee, replace = TRUE)) |>
+  cbind(1:n_examinee, x = _) |>
+  as.data.frame() |>
+  setNames(c("id", "humility", "egalitarian_belief", "stereotyping", "var_a", "var_b", "var_c"))
+data_difsub_idevar_02 <- 
+  sapply(1:6, \(x) sample(5, n_examinee, replace = TRUE)) |>
+  cbind((n_examinee + 1):(2*n_examinee), x = _) |>
+  as.data.frame() |>
+  setNames(c("id", "humility", "egalitarian_belief", "stereotyping", "var_d", "var_e", "var_f"))
+# write.table(data_difsub_idevar_01, "F:/Nutstore backup/R/codes/RBA/data/data_difsub_idevar_01.txt")
+# write.table(data_difsub_idevar_02, "F:/Nutstore backup/R/codes/RBA/data/data_difsub_idevar_02.txt")
+
+# the scatter records of identical subjects in different data sets 
+data_idesub_diffvar_01 <- data.frame(
+  id = 1:(n_examinee + 10), 
+  humility_t1 = sample(5, n_examinee + 10, replace = TRUE),
+  egalitarian_belief_t1 = sample(5, n_examinee + 10, replace = TRUE),
+  stereotyping_t1 = sample(5, n_examinee + 10, replace = TRUE)
+)
+data_idesub_diffvar_02 <- data.frame(
+  id = 1:n_examinee, 
+  humility_t2 = sample(5, n_examinee, replace = TRUE),
+  egalitarian_belief_t2 = sample(5, n_examinee, replace = TRUE),
+  stereotyping_t2 = sample(5, n_examinee, replace = TRUE)
+)
+# write.table(data_idesub_diffvar_01, "F:/Nutstore backup/R/codes/RBA/data/data_idesub_diffvar_01.txt")
+# write.table(data_idesub_diffvar_02, "F:/Nutstore backup/R/codes/RBA/data/data_idesub_diffvar_02.txt")
+# repeated measurement
+data_repeated_2f <- 
+  sapply(1:6, \(x) sample(5, 100, replace = T)) |>
+  cbind(id = 1:100) |>
+  as.data.frame() |>
+  setNames(c("id", "A1B1", "A2B1", "A1B2", "A2B2", "A1B3", "A2B3"))
+# write.table(data_repeated_2f, "F:/Nutstore backup/R/codes/RBA/data/data_repeated_2f.txt")
+# recursive res with speedness
+df_res <- sapply(1:20, \(x) sample(5, 10, replace = T)) |>
+  as.data.frame() |>
+  setNames(paste("var", 1:20, sep = ""))
+df_rt <- sapply(1:20, \(x) runif(10, 1000, 20000)) |>
+  as.data.frame() |>
+  setNames(paste("rt_var", 1:20, sep = ""))
+df_all <- cbind(df_res, df_rt)
+df_all[3, 9:20] <- rep(1:3, length.out = 12)
+df_all[3, 29:40] <- runif(12, 100, 500)
+# outlier
+cor_matrix <- matrix(c(1, 0, 0, 1), nrow = 2, ncol = 2)
+data <- MASS::mvrnorm(1000, mu = rep(0, 2), Sigma = cor_matrix)
+n_outlier <- 20
+id_outlier <- order(rowSums(data), decreasing = T)[1:n_outlier]
+data[id_outlier, ] <- data[id_outlier, ] + matrix(
+  runif(n_outlier * 2, 2, 3), 
+  nrow = n_outlier, 
+  ncol = 2
+)
+```
+
+
+心理学中科学研究的一个重要环节就是和数据打交道，其中使用最广泛的一种数据类型就是问卷数据（survey data）。问卷数据的处理流程一般可以分为以下三步：
+
+1. 收集
+2. 清洗
+3. 分析
+
+其中收集的部分可以采用两种形式，线上或线下，两种形式各有其优缺点。线上的优点是方便，可以接触到更大的被试群体，同时被试做完问卷以后数据就已经自动录入了；缺点是可能会因为没有主试在场，降低被试做题时的动机水平，从而影响数据质量。线下形式可以一定程度上克服线上形式的缺点，但同时也会增加数据录入的环节，工作量更大。
+
+在收集完问卷的数据后，首先要做的事情就是数据清洗（data cleaning）。道理很简单，就好比吃水果前肯定会把水果清洗一下，把表面的脏东西、杂质都清洗掉，保证吃进去的是干净的水果。同样的，一批数据来了以后，要首先把里面的“杂质”清洗掉，只留下干净的数据。
+
+数据清洗并没有准确、统一的定义，不同应用场景下对于什么样的数据才需要被清洗掉、数据清洗到底应该采用什么样的流程等问题都会有所不同的解答。除此之外，数据清洗的操作总体上是相对繁琐和复杂的，甚至比统计分析的操作还更琐碎。
+
+数据清洗是重要的，因为如果数据中包含太多未被清除的杂质，就会使得数据中有效信息占比低，噪音占比高，最终影响基于数据所得的研究结论。然而，在绝大多数应用统计类教材或者是数据分析类教材中，都忽略掉了数据清洗的部分，这些教材中展示的数据都是已经清洗好的数据。这就导致使用者在面临实际问题时，往往需要自己根据经验来解决数据清洗的问题。所以，本节就针对心理学领域中最为常用的问卷类数据，专门讲解此类数据的数据清洗中的常见需求及其解决方案。
+
+
+## Prerequisite
+
+### Translation(*)
+
+如果是使用本土学者开发的问卷或者是你自己开发的问卷，但研究成果计划发表在国外期刊上时，就涉及到翻译原始问卷的问题。此时需要使用准确、规范的学术语言。以下为 Likert 式计分量表的推荐英文表达。
+
+[Likert-Type Scale Response Anchors](https://www.marquette.edu/student-affairs/assessment-likert-scales.php)
+
+### Tidy data
+
+数据清洗是为了将数据中的无效部分去除，并最终整理成一个清晰的形式，方便接下来直接使用统计分析方法处理清洗后的数据。因此，需要知道 R 中大多数统计分析函数对于数据的形式有什么样的要求，即什么样的数据才是干净、整洁的。这里介绍 Tidyverse 提出的 tidy data 的概念，本质上是遵循“一人一行、一列一变量”的基本原则，tidydata 包括以下三条规则：
+
+1. 每一个变量都要有专属的一列（最重要）；
+2. 每一份观察记录要有专属的一行；
+3. 每一个数据点要有专属的单元格。
+
+<img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/tidy data rules.png" alt="" width="500"/>
+
+- Tidy data 示例
+
+<img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/real world data example.png" alt="" width="500"/>
+
+```{r echo = FALSE}
+head(read.csv("F:/Nutstore backup/R/codes/RBA/data/Pokemon.csv"))
+```
+
+```{r eval = FALSE, echo = FALSE}
+untidy_data <- data.frame(
+  A = c(13, 4),
+  B = c(9, 2),
+  C = c(12, 10),
+  D = c(7, 8),
+  E = c(10, 6),
+  F = c(8, 6),
+  G = c(9, 4),
+  row.names = c("virtual_imaginary", "no_virtual_imaginary")
+)
+write.table(untidy_data, "data/untidy data virtual imaginary.txt")
+```
+
+- not tidy data 示例
+
+例如，心理统计学（第2版）例6-11，有学者研究了视觉表象对视知觉的影响，实验中要求被试从屏幕短暂呈现的图片中搜索是否有蓝色小箭头，但在被试完成的任务中，有一半任务在搜索的同时要求被试构建一个心理表象（如想象火山喷发），结果如下，要求构建心理表象条件下的错误次数是否显著高于不要求构建心理表象条件下的错误次数？
+```{r echo = FALSE}
+read.table("F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt")
+```
+上面展示的数据如果需要整理成`tidy data`，应该是这个样子：
+```{r eval = TRUE, echo = FALSE}
+data_virtual_imaginary <- read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
+)
+data_virtual_imaginary |>
+  t() |>
+  as.data.frame(row.names = 1:ncol(data_virtual_imaginary)) |>
+  cbind(participant = LETTERS[1:ncol(data_virtual_imaginary)]) |>
+  pivot_longer(
+    cols = c("virtual_imaginary", "no_virtual_imaginary"), 
+    names_to = "group", 
+    values_to = "count"
+  ) |>
+  dplyr::select(participant, group, count)
+```
+
+所以，如何将数据整理成为 tidy data 的形式，通常也是 data cleaning 的一个环节。需要注意的是，不是说不整理成 tidy data 的形式就是错误的，而是说整理成这种形式更便于理解和统计分析。
+
+
+### Pipe operator
+
+#### `%>%`
+
+`%>%`，最早来自 magrittr 包，作者是 Stefan Milton Bache.
+
+<img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/Stefan Milton Bache.jfif" alt="" width="200"/>
+
+
+#### What is `%>%`
+
+<img style = "border: 1px solid black; padding: 2px; background: #fff" src="images/pipe operator.png" alt="" width="500"/>
+
+`%>%`的最基本用法是`x %>% fun(...)`，本质上相当于`fun(x, ...)`，即把`x`输送给`fun`，并默认作为第一个 argument，并且执行`fun`。
+
+```{r}
+vec <- c(1, 2, 3)
+vec %>% mean
+mean(vec)
+```
+
+
+#### Placeholder
+
+当需要将`%>%`左侧的`x`传递给右侧的`fun`，且不是作为首个 argument 时，就需要用到占位符（placeholder）了，与`%>%`匹配的 placeholder 是`.`。那么如何理解 placeholder？placeholder 就是先给以后要传递过来的`x`占个座，等`x`传过来了就它让作为这个位置的参数，然后执行`fun`。
+
+```{r}
+df <- data.frame(x = c(1, 2, 3), y = c(4, 5, 6))
+df %>% 
+  ncol %>%
+  seq(from = 1, to = .)
+```
+
+
+#### why `%>%`
+
+那既然是`1:3 %>% mean`与`mean(1:3)`是等价的，为什么要开发`%>%`？为了让代码看起来更加简洁易懂。
+
+```{r}
+car_data <- transform(aggregate(
+  . ~ cyl, 
+  data = subset(datasets::mtcars, hp > 100), # mtcars[mtcars$hp > 100, ]
+  FUN = function(x) round(mean(x), 2)
+), kpl = mpg*0.4251)
+car_data
+```
+
+要读懂上一段代码，首先要做的是根据`()`来判断到底哪部分先执行。可以看得出来，是先执行内层的`aggregate()`，再执行外层的`transform()`。除此自外，`aggregate()`的 argument 是 function 的执行结果，并且还是 function 套 function，这也增加了理解的难度。
+
+```{r}
+car_data <- 
+  datasets::mtcars %>%
+  subset(hp > 100) %>%  
+  aggregate(. ~ cyl, data = ., FUN = . %>% mean %>% round(2)) %>%  # the second dot is a placeholder, the 1st and 3rd ones are the dot notation of aggregate
+  transform(kpl = mpg * 0.4251)
+car_data
+```
+
+使用`%>%`改写以后，就变成语义和结构上都更加清晰的一段代码，从上到下可以解读为：
+
+1. 将`mtcars`中`hp>100`的部分取出；
+2. 将上一步得到的数据使用`aggregate()`按`cyl`分组求均值，结果取整，保留 2 位小数；
+3. 将上一步得到的数据做 transformation，将`mpg`这一列乘以`0.4251`，所得结果存新的一列`kpl`。
+
+这样的代码读起来认知负担就远小于原始的代码。同时，从这个例子也可以看出来，`%>%`适合针对同一个 object 的序列操作。
+
+
+#### Native pipe operator
+
+随着 magrittr 包的影响力越来越大，使用`%>%`的人越来越多，R core team 也在 4.1.0 中加入了 native pipe operator ——`|>`，从此以后再也不用另外再加载 magrittr 包了。
+
+那么`|>`和`%>%`有什么区别需要注意的吗？有，一共 7 点区别，其中前 4 点十分常用。
+
+1. `|>`中右侧调用的 function 必须有明确的`()`；
+
+```{r}
+vec <- c(1, 2, 3)
+vec %>% mean
+vec %>% mean() # equivalent
+vec |> mean()
+```
+
+2. `|>`的 placeholder 是`_`；
+
+```{r}
+df <- data.frame(x = c(1, 2, 3), y = c(4, 5, 6))
+df %>% 
+  ncol %>%
+  seq(from = 1, to = .)
+df |>
+  ncol() |>
+  seq(from = 1, to = _)
+```
+
+3. `|>`中`_`必须用于有 name 的 argument；
+
+```{r}
+letters[1:3] %>% paste(., collapse = " and ")
+```
+```{r error = TRUE}
+letters[1:3] |> paste(_, collapse = " and ")
+```
+
+这就使得如果`...`在这种灵活且没有 name 的 argument 上使用`_`，需要取点巧
+```{r}
+# make up an argument with unused name in paste
+letters[1:3] |> paste(x = _, collapse = " and ")
+# use anonymous function
+letters[1:3] |> (\(x) paste(x, collapse = " and "))()
+```
+
+4. 一个`|>`中的`_`只能在右侧使用一次；
+
+```{r}
+letters[1:3] %>% paste(., .)
+```
+
+```{r error = TRUE}
+letters[1:3] |> paste(x = _, y = _)
+```
+
+5. `|>`中`_`不允许在嵌套 function 中使用；
+
+```{r}
+# magrittr supports nested function call wrapped by braces
+1:2 %>% {sqrt(sum(.))}
+```
+
+```{r}
+# use anonymous function for nested calls
+1:2 %>% (\(x) sqrt(sum(x)))
+```
+
+6. `|>`使用`$`时需要更加明确`$`是一个 function；
+
+```{r}
+mtcars %>% `$`(cyl)
+mtcars |> (`$`)(cyl)
+mtcars |> base::`$`(cyl)
+fun <- `$`
+mtcars |> fun(cyl)
+```
+
+7. `|>`执行时不会生成额外的 environment。
+
+```{r}
+x <- 1
+"x" %>% assign(4) 
+x
+# just like a function, %>% generates an additional 
+#   independent env when evaluating, everything therefore 
+#   happen in this environment, change will not be passed 
+#   to the parent environments
+"x" |> assign(4) 
+x
+# |> lead to direct assignment of x in the global 
+#   environment because no additional env.
+"x" |> (\(y) assign(y, 3))() 
+x
+#  anonymous function acts in a way similar to %>%, 
+#   since function call always generate additional env
+```
+
+[What are the differences between R's new native pipe `|>` and the magrittr pipe `%>%`?](https://stackoverflow.com/questions/67633022/what-are-the-differences-between-rs-new-native-pipe-and-the-magrittr-pipe)
+
+
+## Create data set
+
+创建数据集指的是将收集来的数据创建为一个完整的数据集。根据具体情况的不同，可能有录入、合并等多种形式。
+
+### Import
+
+采用线下回收纸质问卷的方式时，第一个要做的事就是人工将数据录入至电脑。这个过程中录入员非常容易因为数据量大、长时间录入而出现录入错误，所以一般会采取双人背对背录入同一批问卷数据的方式来交叉·核对。所以，这种场景下的任务目标就是对比两个数据集是否完全一致，如果不是，不一致的地方在哪里。
+
+在开始对比之前，首先要保证两份数据集大体上的一致性，例如被试的数量、顺序，题目的数量、顺序、缺失数据的处理方式、是否有反向计分，等等。这些都是可以在录入之前就约定好采用相同的处理方式。
+
+```{r back_to_back_input, exercise = TRUE}
+head(data_dirty_01)
+head(data_dirty_02)
+```
+
+1. 是否完全一样
+
+```{r is_identical, exercise = TRUE}
+identical(data_dirty_01, data_dirty_02)
+```
+
+2. 哪里不一样
+
+如果两份数据文件记录的内容完全一样，但只是 element type 不同，`identical()`函数也会返回`FALSE`的结果，所以首先要检查是否存在 element type 上的不同。
+
+```{r where_is_the_diff_element_type, exercise = TRUE}
+# 判断是不是元素类型导致的问题
+elem_type_data01 <- sapply(data_dirty_01, typeof)
+elem_type_data01
+elem_type_data02 <- sapply(data_dirty_02, typeof)
+identical(elem_type_data01, elem_type_data02)
+```
+
+确认了 element type 没有问题以后，就可以判断出来确实存在数据内容上的不同。接下来就是找到不同所在。
+
+```{r where_is_the_diff_content, exercise = TRUE}
+n_ob <- nrow(data_dirty_01)
+locations <- which(data_dirty_01 != data_dirty_02, arr.ind = TRUE)
+locations_row <- locations %% n_ob
+locations_col <- locations %/% n_ob + 1
+locations <- cbind(row = locations_row, col = locations_col)
+locations <- locations[order(locations_row), ]
+head(locations)
+```
+
+核对一下是不是不一样。
+
+```{r check_diff, exercise = TRUE}
+data_dirty_01[3, ]
+data_dirty_02[3, ]
+```
+
+
+### Merge
+
+当数据是分散在不同的设备，或者是数据是在不同的时间点采集时，往往会得到多份记录相同变量但具体数据信息不同的文件，此时就需要将多份文件合并成为一个完整的数据集。
+
+1. 不同被试相同变量
+
+当只是针对不同被试测量了一次相同变量时，这样产生的多份数据只需要匹配变量的信息，即只需要将多份数据中相同的变量信息提取出来，然后纵向合并即可。
+
+```{r rbind_common_columns, exercise = TRUE}
+head(data_difsub_idevar_01)
+head(data_difsub_idevar_02)
+name_common_col <- intersect(names(data_difsub_idevar_01), names(data_difsub_idevar_02))
+name_common_col
+data_merged <- 
+rbind(
+  data_difsub_idevar_01[name_common_col], 
+  data_difsub_idevar_02[name_common_col]
+)
+head(data_merged)
+```
+
+2. 相同被试不同变量
+
+当针对同一批被试，测试了多次不同的变量，或者是在不同的时间点测量了相同的变量时，也可能产生多份数据文件，此时就需要以被试的背景信息为依据，来合并多份数据。
+
+```{r merge_data_with_common_col, exercise = TRUE}
+head(data_idesub_diffvar_01)
+head(data_idesub_diffvar_02)
+data_merged <- merge(data_idesub_diffvar_01, data_idesub_diffvar_02)
+head(data_merged)
+```
+
+使用`merge()`中的额外参数满足更多需求。
+
+```{r merge_data_with_common_col_adavance, exercise = TRUE}
+# the extra rows in x (data_idesub_diffvar_01) that are not in 
+#  y (data_idesub_diffvar_02) will be reserved
+data_merged <- merge(data_idesub_diffvar_01, data_idesub_diffvar_02, all.x = TRUE)
+tail(data_merged)
+```
+
+
+## Convert into tidy data
+
+创建完数据集以后，很有可能数据并不是 tidy data 的形式，大多是两种情况：
+
+1. Wider format: 一个变量的数据跨了好几列；
+2. Longer format: 一个观察记录跨了好几行。
+
+上述两种情况都需要转换数据的形态，前者需要将数据从 wider format 转换成 longer format。在心理学领域的数据分析任务中，前者最为常见，所以本节只讲前者。
+
+### Wider to Longer
+
+重复测量的数据是一个典型的 wider format。例如\(2\times2\)重复测量，
+```{r echo = FALSE}
+head(data_repeated_2f)
+```
+实验处理一共是 4 个水平，但其实是把 A 和 B 这两个变量分在了 4 列。因此，需要执行 wider to longer 的转换，把 4 列的数据合并成 2 列，将原本的分组变量 A 和 B 分离出来，这就需要使用到 tidyr 包中的`pivot_loger()`。
+
+```{r echo = TRUE, eval = FALSE}
+# the most frequently used arguments of pivot_longer
+pivot_longer(
+  data,
+  cols,
+  names_to = "name",
+  names_sep = NULL,
+  names_pattern = NULL,
+  values_to = "value"
+)
+```
+
+- `cols`: 要转变为 longer format 的原 columns；
+- `names_to`: 字符串向量，原 columns 的 names 将储存在新 column 的单元格里，新 column 的 name 由本参数设定。
+  - 如果`names_to`的长度大于 1，将会创建多个新的 columns。在这个情况下，必须提供`names_sep`或`names_pattern`来指定原 columns 的 names 怎么分配到新 columns 的单元格里去。
+    - `NA`：将会遗弃对应的新 column，
+    - `.value`：新 columns 的 names 是原 columns names 的一部分，新 columns 的单元格里储存对应的原 columns  单元格的数据，该参数会覆盖`value_to`参数的设定。
+- `names_sep`: 指定原 columns names 的分割规则，既可以是 numeric vector，表示按照位置来分割，也可以是单个字符（类似`read.table()`中的`sep`参数，可以是正常的字符，如`"_"`，也可以是正则表达式，如`"\."`）。
+- `names_pattern`: 正则表达式，原 columns 的 names 将按照该表达式的匹配结果分割并创建新 columns。
+- `values_to`: 字符，原 column 的单元格中的数据将单独储存在一个新 column （value column）里，新 value column 的 name 由本参数设定。如果`names_to`中包含了`.value`（必须给定`names_sep`或`names_pattern`），本参数的设定会被忽略，并且新 value column 的 name 来自原 columns name 中的指定部分。
+
+1. 基本用法：4 个必写参数，`pivot(data, cols, names_to, values_to)`
+
+```{r pivot_longer_basic, exercise = TRUE}
+data_virtual_imaginary <- read.table(
+  "F:/Nutstore backup/R/codes/RBA/data/untidy data virtual imaginary.txt"
+)
+head(data_virtual_imaginary)
+data_virtual_imaginary |>
+  t() |>
+  as.data.frame(row.names = 1:ncol(data_virtual_imaginary)) |>
+  cbind(participant = LETTERS[1:ncol(data_virtual_imaginary)]) |>
+  pivot_longer(
+    cols = c("virtual_imaginary", "no_virtual_imaginary"), 
+    names_to = "group", 
+    values_to = "count"
+  ) |>
+  dplyr::select(participant, group, count)
+```
+
+2. 额外参数：`names_sep`
+
+```{r pivot_longer_names_sep_01, exercise = TRUE}
+# numeric
+head(data_repeated_2f)
+data_repeated_2f |>
+  pivot_longer(
+    cols = 2:7,
+    names_to = c("A", "B"), 
+    names_sep = 2, 
+    values_to = "score"
+  )
+```
+
+```{r pivot_longer_names_sep_02, exercise = TRUE}
+# single string
+data_repeated_2f_underline <- data_repeated_2f
+names(data_repeated_2f_underline)[2:7] <- c("A1_B1", "A2_B1", "A1_B2", "A2_B2", "A1_B3", "A2_B3")
+head(data_repeated_2f_underline)
+data_repeated_2f_underline |>
+  pivot_longer(
+    cols = 2:7,
+    names_to = c("A", "B"), 
+    names_sep = "_", 
+    values_to = "score"
+  )
+```
+
+3. 额外参数：`names_pattern`
+
+```{r pivot_longer_namespattern, exercise = TRUE}
+head(data_repeated_2f)
+data_repeated_2f |>
+  pivot_longer(
+    cols = 2:7,
+    names_to = c("A", "B"), 
+    names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
+    values_to = "score"
+  )
+```
+
+4. `names_to`的特殊用法
+
+- `NA`: will discard the corresponding component of the column name.
+
+```{r pivot_longer_namesto_na, exercise = TRUE}
+head(data_repeated_2f)
+data_repeated_2f |>
+  pivot_longer(
+    cols = 2:7,
+    names_to = c(NA, "B"), 
+    names_pattern = "([A-Z][0-9])([A-Z][0-9])", 
+    values_to = "score"
+  )
+```
+
+- `.value`: indicates that the corresponding component of the column name defines the name of the output column containing the cell values, overriding `values_to` entirely.
+
+```{r pivot_longer_namesto_dotvalue, exercise = TRUE}
+data_partipipant_id_in_col <- 
+  sapply(1:9, \(x) sample(5, size = 3, replace = T)) |>
+  as.data.frame() |>
+  setNames(c(
+    "var1_t1", "var2_t1", "var3_t1", 
+    "var1_t2", "var2_t2", "var3_t2", 
+    "var1_t3", "var2_t3", "var3_t3"
+  ))
+data_partipipant_id_in_col
+# component of the column name (i.e. "VAR1") defines the name of the output column
+data_partipipant_id_in_col |>
+  pivot_longer(
+    cols = 1:ncol(data_partipipant_id_in_col), 
+    names_to = c(".value", "time_point"), 
+    names_sep = "_"
+  )
+```
+
+更多关于`pivot_longer()`的高级用法详见`vignette("pivot")`。
+
+
+## Reverse coding
+
+[Reverse coding](https://libguides.library.kent.edu/qualtrics/howto/coding#:~:text=What%20is%20Reverse%20Coding%3F%20One%20common%20validation%20technique,to%20check%20if%20respondents%20are%20giving%20consistent%20answers.) is a technique frequently used in survey study.
+
+### What is reverse coding
+
+One common validation technique for survey items is to rephrase a "positive" item in a "negative" way. When done properly, this can be used to check if respondents are giving consistent answers. 
+
+For example, consider the following two items concerning "extraversion":
+
+1. I see myself as someone who is talkative.
+  - Disagree strongly
+  - Disagree a little
+  - Neither agree nor disagree
+  - Agree a little
+  - Agree strongly
+2. I see myself as someone who tends to be quiet.
+  - Disagree strongly
+  - Disagree a little
+  - Neither agree nor disagree
+  - Agree a little
+  - Agree strongly
+
+For question 1, "agree strongly" corresponds to the "most extraverted" option, and "disagree strongly" corresponds to the "least extraverted" option. However, for question 2, "disagree strongly" corresponds to the "most extraverted" option, and "agree strongly" corresponds to the "least extraverted" option. We say that question 2 is reverse-coded.
+
+
+### How to do reverse coding
+
+Manually recode. 
+
+```{r}
+df <- data.frame(x = sample(5, size = 10, replace = TRUE))
+df
+df[df == 1] <- 50
+df[df == 2] <- 40
+df[df == 3] <- 30
+df[df == 4] <- 20
+df[df == 5] <- 10
+df <- df/10
+df
+```
+
+Since recoding Likert scale survey data are repeat operations, they can be converted into a for loop,
+```{r recode_manual_for, exercise = TRUE}
+df <- data.frame(x = sample(5, size = 10, replace = TRUE))
+df
+scale_piont <- 5
+coding_rule <- seq(scale_piont*10, 10, by = -10)
+for (i in 1:scale_piont) {
+  df[df == i] <- coding_rule[i]
+}
+df <- df/10
+df
+```
+
+What is its `apply()`/`sapply()`/`lapply()` substitute?
+
+```{r recode_manual_apply, exercise = TRUE}
+df <- data.frame(x = sample(5, size = 10, replace = TRUE))
+scale_piont <- 5
+coding_rule <- seq(scale_piont*10, 10, by = -10)
+```
+
+```{r recode_manual_apply-solution}
+# sapply(1:scale_piont, \(x) {
+#   df[df == x] <<- coding_rule[x]
+#   return(NULL)
+# })
+# df <- df / 10
+# a more straightforward solution by Shusheng Liu
+df <- sapply(df, \(i)coding_rule[i])/10
+```
+
+The code above illustrates the basic idea of recoding. However, a more flexible function is available, and reinventing the wheel is not recommended
+
+`car::recode`
+
+`recode(var, recodes)`
+
+- `var`: numeric vector, character vector, or factor.
+- `recodes`: character string of recode specifications: see below.
+
+Recode specifications appear in a character string, separated by default by semicolons (see the examples below), each of the form `input=output`. 
+
+Several recode specifications are supported:
+
+- single value: For example, `0=NA`.
+- vector of values: For example, `c(7, 8, 9) = "high"`.
+- range of values: For example, `7:9 = "C"`. Note: `:` is not the R sequence operator. In addition, you may not use `:` with the `c` function within a recode specification, so for example `c(1, 3, 5:7)` will cause an error. The `:` is the default value of the `recode interval` operator; a non-default value may be specified.
+- `else`: everything that does not fit a previous specification. For example, `else = NA`. Note that `else` matches all otherwise unspecified values on input, including `NA`, and if present should appear last among the recode specifications.
+
+Character data and factor levels on the left-hand side of a recode specification must be quoted. Thus, e.g., `c(a, b, c) = "low"` is not allowed, and should be `c("a", "b", "c") = "low"`. Similarly, the colon is reserved for numeric data, and, e.g., `c("a":"c") = "low"` is not allowed. If the `var` argument is a character variable with (some) values that are character representations of numbers, or a factor with (some) levels that are numbers (e.g., `"12"` or `"-2"`), then these too must be quoted and cannot be used with colons (e.g., `"15":"19" = "15 to 19"` is not allowed, and could be specified as `c("15", "16", "17", "18", "19") = "15 to 19"`, assuming that all values are the character representation of whole numbers).
+
+```{r error = TRUE}
+x <- rep(1:3, times = 3)
+x
+car::recode(x, 'c(1, 2) = "A"; else = "B"')
+# don't miss the double quote if recode numeric into character or vice versa
+#   otherwise error
+car::recode(x, "c(1, 2) = A; else = B")
+```
+
+Reverse-code a Liker-5 point variable.
+
+```{r}
+df <- 
+  data.frame(
+    x = sample(5, size = 10, replace = TRUE), 
+    y = sample(5, size = 10, replace = TRUE)
+  )
+df$x
+# reverse code x
+df$x <- car::recode(df$x, recodes = "1=5;2=4;3=3;4=2;5=1")
+df$x
+# generate recode specifications with paste
+# df$x <- car::recode(df$x, paste(1:5, 5:1, sep = "=", collapse = ";"))
+# df < df - 6 # By Yuchen Liu, effective by less flexible than recode
+```
+
+Reverse-code multiple variables simultaneously with a self-defined function.
+
+```{r recode_self_fun, exercise = TRUE}
+# author: Wenzheng Lin
+# collaborator: Yujun Li
+recode_vars <- function(
+    data, 
+    max = 5, 
+    min = 1, 
+    vars = names(data)
+  ){
+  rule <- paste(min:max, max:min, sep = "=", collapse = ";")
+  if (!is.data.frame(data) & is.vector(data)) {
+    # recode single variable
+    output <- car::recode(data, rule)
+    return(output)
+  }
+  output <- as.data.frame(apply(data[vars], 2, \(x) car::recode(x, rule)))
+  # recode some variables
+  if (ncol(data) != length(vars)) {
+    vars_rest <- !names(data) %in% vars
+    output <- data.frame(data[, vars_rest], output)
+    names(output)[1:(ncol(output) - length(vars))] <- names(data)[vars_rest]
+    output <- output[names(data)]
+  }
+  return(output)
+}
+df <-
+  data.frame(
+    x = sample(7, size = 10, replace = TRUE),
+    y = sample(7, size = 10, replace = TRUE),
+    z = sample(7, size = 10, replace = TRUE)
+  )
+head(df)
+df_recode_xy <- recode_vars(df, max = 7, vars = c("x", "y"))
+head(df_recode_xy)
+df_recode_all <- recode_vars(df, max = 7)
+head(df_recode_all)
+```
+
+
+## Aberrant response
+
+Aberrant response 的种类很多，常见的如下：
+
+1. Validity measure/attention check,
+3. Quantitative unrealistic response,
+4. Speedness,
+5. Repeated observations,
+6. Recursive responses,
+7. Outlier,
+8. Missing data.
+
+处理 aberrant response 的核心是通过一些特定的操作产生一个 logical object，`TRUE`可以表示是 aberrant response，`FALSE`则相反。再使用该 logical object 作为 subsetting 的 index 就可以提取出找到的所有 aberrant response，至于找出来以后是直接删除还是另作处理就很简单了。
+
+
+### Validity measure/attention check, unrealistic response, speedness
+
+这三类都适用相同的处理办法，即使用 relational + logical operators 的方式生成 logical object 作为 index，然后使用该 index 来 subsetting 即可。
+
+
+#### Validity measure/attention check
+
+[Too Good to Be True: Bots and Bad Data From Mechanical Turk](F:\Nutstore backup\My Learning\My projects\Citavi 6\Projects\Everyday reading\Citavi Attachments\Webb 和 Tangney - 2022 - Too Good to Be True Bots and Bad Data From Mechan.pdf)
+
+The attention checks consisted of the following: 
+
+a. embedded on the Grit scale—“Select‘Somewhat like me’ for this statement,” 
+b. embedded on the Beck Depression Inventory—“1 – Select this option,” and 
+c. embedded on the Borderline Personality Inventory—“Select ‘Yes’ for this statement.”
+
+[A more detailed introduction on attention check: Prolific's Attention and Comprehension Check Policy](https://researcher-help.prolific.com/en/article/fb63bb)
+
+```{r}
+df <- data.frame(
+  x = sample(
+    1:5, 
+    size = 10, 
+    replace = TRUE, 
+    prob = c(0.6, 0.1, 0.1, 0.1, 0.1)
+  ),
+  y = sample(5, size = 10, replace = TRUE),
+  z = sample(5, size = 10, replace = TRUE)
+)
+head(df)
+# assume x is the attention check item and participant is requested to select 1.
+id_fail_atten_check <- (1:nrow(df))[df$x != 1]
+id_fail_atten_check
+df_filtered <- df[-id_fail_atten_check, ]
+```
+
+
+#### Quantitative unrealistic response
+
+需要根据问卷的具体内容来判断到底什么样的作答才算 unrealistic。例如询问被试的日均手机使用时间，有人填了 25 小时，或者是同一份问卷内有多个询问手机使用时间的题目，结果被试在这些题目上填写的使用时间加起来大于 24 小时，显然就是 unrealistic。针对这种可以使用一定数值标准（例如`>24`）为依据判断作答是否 unrealistic 的情况，称之为 quantitative unrealistic response。文本类型的 qualitative unrealistic response 则需要人工检查。
+
+
+#### Speedness
+
+当被试的作答时间异常短时，可以视作是出现了 speedness 的情况，有理由认为是 aberrant response。一般会根据 response time in total 来判断。例如一份问卷预计作答时间是 50 min，那么可以将下限定为 20 min。总用时低于这个下限的就标记为 speedness。如果记录了每一题被试的作答反应时数据，则可参考 recursive responses 小节针对 response time 的处理。
+
+
+### Repeated observations
+
+有些时候可能由于人工录入数据的时候，出现了同一份问卷录入了两次甚至更多的问题，此时就产生了 repeated observations，使用`duplicated()`检测。
+
+```{r}
+df <- data.frame(
+  x = sample(
+    1:5, 
+    size = 10, 
+    replace = TRUE, 
+    prob = c(0.6, 0.1, 0.1, 0.1, 0.1)
+  ),
+  y = sample(5, size = 10, replace = TRUE),
+  z = sample(5, size = 10, replace = TRUE)
+)
+head(df)
+df <- df[sample(nrow(df), size = 15, replace = TRUE), ]
+df
+id_dup_row <- duplicated(df)
+id_dup_row
+df[!id_dup_row, ]
+```
+
+
+### Recursive responses
+
+当问卷总题数较长且被试失去了兴趣和耐心时，被试很有可能会出现低动机（low motivation）的状况，并最终驱动 ta 开始随意作答，出现规律性的重复作答，如 345345345。但是这种情况的处理是有争议的，一般建议在没有非常强的证据时（如伴随有异常短的 response time），不将类似的作答作为 aberrant response。因为无法排除是正常作答的被试选择了类似 345345345345 的 recursive responses 的可能。因此，更建议的做法是找出有 recursive response 的被试，然后结合这些被试在每一题上的 response time 来 double check。
+
+1. locate recursive responses
+
+可选方案：
+
+- 使用`paste()`将所有作答横向拼接为字符串，然后使用`grep()`查找指定模式的 recursive responses。
+
+```{r}
+head(df_all)
+df_char <- apply(df_all[, 1:20], 1, \(x) paste(x, collapse = ""))
+df_char
+grep("123123123123", df_char)
+```
+
+2. check response time
+
+可选方案，t test (more informative) or Kolmogorov-Smirnov Tests.
+
+```{r}
+df_char <- apply(df_all[, 1:20], 1, \(x) paste(x, collapse = ""))
+id_recur_res <- grep("123123123123", df_char)
+results_match <- regexec("123123123123", df_char)
+start_recur_res <- results_match[[3]][1] + 20
+end_recur_res <- start_recur_res + attributes(results_match[[3]])$match.length - 1
+rt_normal_res <- df_all[id_recur_res, 21:(start_recur_res - 1)]
+rt_recur_res <- df_all[id_recur_res, start_recur_res:end_recur_res]
+t.test(rt_normal_res, rt_recur_res)
+ks.test(as.numeric(rt_recur_res), as.numeric(rt_normal_res))
+```
+
+
+### Outlier
+
+[Outliers](file:///F:/Nutstore%20backup/R/codes/R%20class/reference/A%20New%20Way%20to%20Handle%20Multivariate%20Outliers%20_%20R-bloggers.html) in statistics are considered as the data values which differ considerably from the bulk of a given data set. Outliers can strongly bias statistical inference. 
+
+```{r eval = FALSE, include = FALSE}
+set.seed(123)
+cor_matrix <- matrix(
+  c(1, 0.43, 0.28, 0.43, 1, 0.12, 0.28, 0.12, 1), 
+  nrow = 3, ncol = 3
+)
+sds <- c(0.56, 1.12, 0.70)
+data <- MASS::mvrnorm(
+  600, 
+  mu = c(2.65, 3.56, 2.21), 
+  Sigma = yjc::cor2cov(cor_matrix, sds = sds)
+) |>
+  as.data.frame() |>
+  setNames(c("alone_affinity", "time_alone", "loneliness"))
+psych::pairs.panels(data)
+# add outliers
+n_outlier <- 20
+id_outlier <- sample(nrow(data), n_outlier)
+sapply(1:3, \(x) {
+  data[id_outlier, x] <<- data[id_outlier, x] + runif(n_outlier, sds[x]*1.96, sds[x]*3)
+  return(NULL)
+})
+psych::pairs.panels(data)
+# fit moderation
+model1 <- lm(loneliness ~ time_alone * alone_affinity, data = data)
+interactions::interact_plot(model1, pred = "time_alone", modx = "alone_affinity") +
+  jtools::theme_apa()
+# check normality assumption
+interactions::interact_plot(model1, pred = "time_alone", modx = "alone_affinity", linearity.check = TRUE) +
+  jtools::theme_apa()
+# check outliers using QQ plot
+psych::outlier(data)
+# detect outliers using Mahalanobis distance
+dis_mh <- mahalanobis(data, center = colMeans(data), cov = cov(data))
+alpha <- .001
+cutoff <- qchisq(p = 1 - alpha, df = ncol(data))
+id_outlier <- which(dis_mh > cutoff)
+data[id_outlier, ]
+data_outlier_rm <- data[-id_outlier, ]
+model2 <- lm(loneliness ~ .*time_alone, data = data_outlier_rm)
+summary(model2)
+```
+
+```{r}
+cor_matrix <- matrix(c(1, 0, 0, 1), nrow = 2, ncol = 2)
+data <- MASS::mvrnorm(1000, mu = rep(0, 2), Sigma = cor_matrix)
+plot(data)
+cor.test(data[, 1], data[, 2])
+# add_outliers
+n_outlier <- 20
+id_outlier <- order(rowSums(data), decreasing = T)[1:n_outlier]
+data[id_outlier, ] <- data[id_outlier, ] + matrix(
+  runif(n_outlier * 2, 2, 3), 
+  nrow = n_outlier, ncol = 2
+)
+plot(data)
+cor.test(data[, 1], data[, 2])
+```
+
+
+#### Mahalanobis Distance
+
+\[D^2_i=(\boldsymbol{x}_i-\boldsymbol{\hat{\mu}})'\boldsymbol{S}^{-1}(\boldsymbol{x}_i-\boldsymbol{\hat{\mu}}).\]
+
+\(D^2\) theoretically follows a \(\chi^2\) distribution with degrees of freedom (\(df\)) equal to the number of variables. 
+
+```{r outlier_mh, exercise = TRUE, warning = FALSE}
+dis_mh <- mahalanobis(data, center = colMeans(data), cov = cov(data))
+id_outlier_mh <- which(dis_mh > qchisq(p = 1 - 0.05, df = ncol(data)))
+id_outlier_mh
+id_outlier %in% id_outlier_mh
+cor.test(data[-id_outlier_mh, 1], data[-id_outlier_mh, 2])
+```
+
+
+#### Minimum Covariance Determinant
+
+It is clearly that Mahalanobis distance has an inflated type-I error rate, since it detects more than 20 outliers in the previous example. This is because Mahalanobis distance uses the mean vector and covariance matrix, which already contain considerable amount of bias due to outliers. It makes more sense to use more accuratly estimated mean and covariance when calculating Mahalanobis distance. This is the idea behind Minimum Covariance Determinant, which calculates the mean and covariance matrix based on the most central subset of the data.
+
+```{r outlier_mh_mcd, exercise = TRUE, warning = FALSE}
+mean_cov_75 <- MASS::cov.mcd(data, quantile.used = nrow(data)*.75)
+mh_75 <- mahalanobis(data, mean_cov_75$center, mean_cov_75$cov)
+id_outlier_mh_75 <- which(mh_75 > qchisq(p = 1 - 0.05, df = ncol(data)))
+id_outlier_mh_75
+id_outlier %in% id_outlier_mh_75
+cor.test(data[-id_outlier_mh_75, 1], data[-id_outlier_mh_75, 2])
+```
+
+Although the type I error rate of MCD-based Mahalanobis distance is still inflated, it performs arguably better than the traditional one. Methods to deal with outliers abound, and none of them is perfect. Interested readers in more details about how to detect outliers are refered to Leys et al. (2018).
+
+> Leys, C., Klein, O., Dominicy, Y., & Ley, C. (2018). Detecting multivariate outliers: Use a robust variant of Mahalanobis distance. Journal of Experimental Social Psychology, 74, 150-156.
+
+[Optimising dplyr](https://www.r-bloggers.com/2021/12/optimising-dplyr/)
+

@@ -1,0 +1,174 @@
+# Basic: the ubiquitous `x <- value` {#x-value}
+
+## Create and replace
+
+代码语句的最基本结构：`x <- value`，表示将`value`赋值给`x`，其中`<-`可以理解为执行了“赋值”（assignment）这一动作。这种基本结构只有两种使用场景：
+
+1. `x`是一个 name。在这种场景下，有两种用法，**创建 object **或**替换已有 object **。
+
+```{r eval = FALSE}
+# create object
+a <- 1
+```
+
+从右往左读这行代码：
+
+-  产生了一个没有名字的**对象**（object），即匿名对象（anonymous object），是一个长度为 1 的向量，value 为`1`；
+-  把这个 anonymous object 赋值给`a`，即用`a`作为它的 name。
+
+通过这样的方式就创建了一个 object，它的 name 为`a`。以后如果想要和一个已经创建的 object 互动，就需要使用它的 name 来呼唤它，就好比养了一条宠物狗，要起个名字来互动一样。
+
+比如想要把名叫`a`的 object 的 value 翻倍：
+```{r}
+a <- 1  # create object
+a <- a*2  # replace the value of an existing object
+#  both the creating and the replacing actions are assigning
+#   a particular value to a specific name
+```
+
+为什么`a <- 1`最好理解为“产生一个 anonymous object，其 value 为`1`，然后将这个 anonymous object 赋给`a`”，而不是“一个叫`a`的 object，令它的 value 为`1`”呢？
+
+因为`a <- 1` 这行代码在 R 中是从右到左执行的，先产生一个 anonymous object 为`1`，然后再给它赋给一个 name，变成一个存在于 Global Environment 里面有 name 有 value 的 object。换而言之，所有 anonymous object 都是不会存储在 Global Environment 里，即用即抛，不可以再和它互动。
+
+2. `x`是一个语句（一段代码），指代某个已经存在的 object 的一部分。这种场景下只有一种用法，就是**替换**。
+
+```{r x_value_expression, exercise = TRUE}
+a <- c(1, 2, 3)  # create an object named "a"
+a  # print a to the console
+a[2] <- 0.5  # replace the 2nd element of a with 0.5
+a  # print a to the console to check whether the replacement succeed
+```
+
+基本上绝大多数 R 代码归根结底都是`x <- value`这种形式，或简单或复杂。
+
+- 如果一行代码是`x <- value`的形式，那么执行该行该代码通常不会在 Console 输出结果。
+- 如果一行 R 代码没有`<-`，而是只有 name ，那么 R 会到 Global Environment 里去寻找与 name 匹配的 object，然后将其 value 输出到 Console ；
+- 如果一行 R 代码没有`<-`，而是一个语句，相当于只有 value，生成了一个不会存储在 Global Environment 里的 anonymous object，执行这段代码时会将生成的 anonymous object 的 value 直接输出到 Console。
+
+这也就意味着，如果看到某一行 R 代码中没有`<-`，通常就应该预期在 Console 中看到输出。
+
+例如：
+```{r eval = FALSE}
+a <- 1  # no output in console
+a  # print the value of a onto the console
+1  # anonymous object, print its value onto the console
+```
+
+在 Console 会分别输出：
+```{r eval = FALSE}
+2  # the value of a
+1  # the value of the anonymous object 1
+```
+注： R 中，`#`表示注释，通常是用来解释代码的具体作用和功能。某一行代码中在`#`后的所有部分， R 都不会执行。此外，`#`只作用于所在行，不会跨行。
+
+
+## `<-` vs `=`
+
+在其他的计算机编程语言中，都是使用`=`作为赋值符号的，但在 R 中用的是`<-`。虽然用`=`也可以，但并不建议这么做，因为不符合约定俗成的规范。
+
+```{r assignment_arrow_equal_1, exercise = TRUE}
+a <- 1
+a = 1
+```
+
+
+### When to use `<-` and when to use `=`
+
+1. 赋值一律用`<-`；
+2. function 的 argument 中使用`=`来分隔 argument 名和 argument 值。
+
+```{r assignment_arrow_equal_2, exercise = TRUE}
+a <- c(x1 = 1, x2 = 2, x3 = 3)
+a
+```
+
+
+## Tips
+
+1.  R 和绝大多数编程语言一样，**区分大小写**，`a`和`A`是完全不同的（`c()`和`C()`）；
+2.  R 中所有的符号**必须是英文半角符号**；
+3. `<-`是由一个英文的小于号`<`和英文的减号`-`组成，中间不能有任何空格，否则会被 R 分别解读为`<`和`-`；
+4. `#`表示注释，即`#`后面的内容都不会执行，仅对`#`所在行有效，不跨行。
+
+
+## Frequently made mistakes
+
+因大小写弄错导致找不到对象或者是 function 用错：
+
+```{r name_value_mistake, exercise = TRUE, warning = TRUE, error = TRUE}
+C(1, 2, 3)
+c（1，2，3）
+var_vec <- c(1, 2, 3)
+mean(var_Vec)
+```
+
+## Basic: naming rules and recommendations {#naming-rule-recommendation}
+
+### Rules
+
+在 R 中，给 object 设定 name 的规则十分明确，只能由以下几类字符构成：
+
+1. 字母: `a-z`，`A-z`；
+2. 数字: `0-9`；
+3. `.`；
+4. `_`。
+
+除此之外，还有两个不允许：
+
+1. 不允许由`_`，或`0-9`，或`.0-9`开始；
+2. 不允许使用保留的单词，如`TRUE`，`NULL`，`if`和`function`，全部保留的单词列表可以通过`?Reserved`或`help("Reserved")`查看。
+
+任何 name 违背了上述两条规则时，都属于非法 name，执行时 R 会报错（`error`）并中止当前执行的代码。
+
+非法 name 示例：
+
+```{r eval = FALSE}
+_abc <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected input in '_'")
+```
+
+```{r eval = FALSE}
+.11a <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected symbol in '1a'")
+```
+
+```{r eval = FALSE}
+if <- 1
+```
+
+```{r echo = FALSE}
+cat("Error: unexpected assignment in 'if <-'")
+```
+
+不过，如果记不住上述规则也不要紧，因为一旦使用了非法的 name，RStudio 就会有非常清晰的提示，所以无需记忆。
+
+**注意：R 中虽然可以使用中文作为 name，但并不建议这样做，可能会触发和解码有关的问题。**
+
+
+### Recommendations
+
+1. 始终用小写字母；
+2. 必要时可使用下划线`_`区分不同部分（`n_fruit`）；
+3. 变量名用名词（`n_fruit`），`function`名用动词（`order()`）；
+4. value 性质相同的 objects，命名时使用相同的前缀（`n_fruit`，`n_class`，`n_stu`，`n_tea`）；
+
+## Recap
+
+1.  R **区分大小写**；
+2.  R 中所有的符号**必须是英文半角符号**；
+3. `x <- value`中当`x`可以是 name，也可以是一个语句；
+4. `x <- value`中当`x`是一个 name 时，首次运行表示创建一个同名 object，后续运行表示替换该 object；
+5. `x <- value`中当`x`是一个语句时，该语句一般指是一个在 Global Environment 中已经存在的 object 的一部分，此时`x <- value`表示替换该部分的值；
+6. `<-`中间不能有空格；
+7. `x <- value`结构的语句不会在 Console 有输出结果；
+8. 一行代码只有`x`，没有`<- value`的部分，执行时会在 Console 输出 Global Environment 中与`x`匹配的 object 的 value，若只是一段可执行语句，即`x <- value`结构中的`value`部分，而没有`x <-`部分，则输出`value`本身的执行结果，生成一个 anonymous object；
+9. `#`后面的所有内容都是注释，不会被执行。
+10. name 不允许由`_`，或`0-9`，或`.0-9`开始；
+11. name 不可以是保留的单词，如`TRUE`，`NULL`，`if`和`function`，等等；
+12. name 里不建议使用中文。

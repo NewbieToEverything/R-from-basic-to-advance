@@ -1,0 +1,10 @@
+# Basic: interact with object {-}
+
+通过`x <- value`的基本语句结构，创建了一个名叫`x`的 object，它的值是`value`。那么接下来就是如何与这个 object 互动，来实现我们想要的操作。
+
+互动有以下几种基本的形式：
+
+- 读取和写入数据：将数据文件读入，变成 R 中的一个 object；将 R 中的 object 存成一个数据文件（如存在 excel 文档里面），即写入；
+- 取子集：取 object 的指定部分；
+- 操作：使用 object 进行一些操作，如加减乘除；
+- 使用 function：把 object 为 argument，使用 function 来执行特定任务。

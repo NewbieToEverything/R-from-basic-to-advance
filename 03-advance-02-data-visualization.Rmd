@@ -1,0 +1,974 @@
+# Advance: data-visualization {#data-visualization}
+
+```{r setup, echo = FALSE, include = FALSE}
+dpi <- 500
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  cache = TRUE,
+  # fig.width = 400/dpi,
+  # fig.height = 280/dpi,
+  dpi = dpi,
+  fig.retina = 1,
+  out.width = "100%"
+)
+library(tidyverse)
+library(plotly)
+# mandarin, math and english data
+set.seed(123)
+n_total <- 372
+data_exams <- data.frame(
+  gender = sample(c("female", "male"), n_total, replace = TRUE),
+  age = sample(15:17, n_total, replace = TRUE),
+  class = sample(c("normal", "better", "best"), n_total, replace = TRUE),
+  school = sample(c("a", "b"), n_total, replace = TRUE),
+  exam = sample(c("last", "current"), n_total, replace = TRUE)
+)
+sds <- c(8, 12, 9)
+cor_matrix <- matrix(
+  c(1, 0.30, 0.59, 0.30, 1, 0.32, 0.59, 0.32, 1), 
+  nrow = 3, 
+  ncol = 3
+)
+cov_matrix <- yjc::cor2cov(cor_matrix, sds)
+scores <- 
+  MASS::mvrnorm(
+    n_total, 
+    mu = c(76, 73, 75), 
+    Sigma = cov_matrix
+  ) |> 
+  round() |> 
+  as.data.frame() |>
+  setNames(c("mandarin", "math", "english"))
+scores[scores > 100] <- 100
+data_exams <- cbind(data_exams, scores)
+var_tofactor <- c("age")
+sapply(var_tofactor, \(x) {
+  data_exams[, x] <<- factor(data_exams[, x])
+  return(NULL)
+})
+```
+
+## Introduction
+
+> A Picture Is Worth a Thousand Words
+
+When exploring the data, a quick way is to use visualization tools, because graph is more straightforward and illustrative than table. Below are several examples of good visualization.
+
+- [How Probable is……. By Gradient Metrics](http://127.0.0.1:5736/3%20-%20Advance%20-%20Data%20Visualization.Rmd#section-introduction)
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 example 03 how probable is by gradient metrics.png" alt="" width="80%"/>
+
+- [Gender Gap in the Olympic Games by Leniolabs](https://www.s2research.com/blog/data-is-beautiful-a-compilation-of-our-favorite-charts-and-statistics)
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 example 04 gender gap in winter olympic games.png" alt="" width="100%"/>
+
+[Film Dialogue (broken down by gender)](https://pudding.cool/2017/03/film-dialogue/)
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 example 05 film dialogue gender gap.png" alt="" width="100%"/>
+
+In `R`, one of the most powerful and popular visualization tools is the [`ggplot2`](https://ggplot2.tidyverse.org/) package. `ggplot2` has an underlying grammar, based on the Grammar of Graphics, that allows you to compose graphs by combining independent components. This makes `ggplot2` powerful. Rather than being limited to sets of pre-defined graphics, you can create novel graphics that are tailored to your specific problem. While the idea of having to learn a grammar may sound overwhelming, `ggplot2` is actually easy to learn: there is a simple set of core principles and there are very few special cases. 
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 hex.png" alt="" width="20%"/>
+
+It is worth noting that this chapter only covers static graphs, the majority of them use the Cartesian coordinate system (x-axis and y-axis).
+
+Reference:
+
+- [Data visualisation - R for Data Science (2nd edition)](https://r4ds.had.co.nz/data-visualisation.html)
+- [ggplot2: Elegant Graphics for Data Analysis](https://ggplot2-book.org/index.html)
+
+
+## Frequently used graphs in Psychology
+
+在心理学中，往往会在数据分析的两个阶段运用到 data visualization ，探索阶段和统计分析阶段，前者是利用 data visualization 初步探寻数据中存在的模式、规律及变量之间的关系，后者则是利用 data visualization 将统计分析的结果呈现出来。虽然是不同阶段，但绘制 graph 的过程没有区别，都是将数据转变为 graph。
+
+心理学中常用的 graph 包括 bar, line, point, histogram, 等等，称这些为基本类型。
+
+
+### Basic graphs: bar, line, point, histograms, etc.
+
+
+- [APA style: Sample bar graph](https://apastyle.apa.org/style-grammar-guidelines/tables-figures/sample-figures)
+
+<img style = "display: block; margin: auto;" src="images/ggplot 2 example 02 apa sample bar graph.jpg" alt="" width="80%"/>
+
+*Note. Framing scores of adolescents and young adults are shown for low and high risks and for small, medium, and large rewards (error bars show standard errors).*
+
+- APA style: Sample line graph
+
+<img style = "display: block; margin: auto;" src="images/ggplot 2 example 02 apa sample line graph.jpg" alt="" width="80%"/>
+
+*Note. Mean regression slopes in Experiment 1 are shown for the stereo motion, biocularly viewed monocular motion, combined, and monocularly viewed monocular motion conditions, plotted by rotation amount. Error bars represent standard errors. From “Large Continuous Perspective Change With Noncoplanar Points Enables Accurate Slant Perception,” by X. M. Wang, M. Lind, and G. P. Bingham, 2018, Journal of Experimental Psychology: Human Perception and Performance, 44(10), p. 1513 (https://doi.org/10.1037/xhp0000553 Add to Citavi project by DOI). Copyright 2018 by the American Psychological Association.*
+
+- [Lee J, Hamilton JT. Anchoring in the past, tweeting from the present: Cognitive bias in journalists' word choices. PLoS One. 2022 Mar 2;17(3):e0263730.](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0263730#pone-0263730-t002)
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 example 01 journal.pone.0263730.g002.PNG" alt="" width="100%"/>
+
+In every 1,000 words of news reports and tweets, journalists who had covered previous presidential campaigns made significantly more references to the 2012 presidential elections (M = 4.30, SD = 3.51) than those without any prior experiences (\(M = 3.17, SD = 2.03\)), \(t(151.73) = -2.53, p = .012\), Cohen’s \(d = 0.39\) (see the left panel of Fig 2). As demonstrated in the center panel of Fig 2, similar patterns held for the past five presidential elections (\(t(136.88) = -3.09, p = .002\), Cohen’s \(d = 0.50\)). Compared to journalists who had not covered any prior presidential elections (\(M = 4.12, SD = 2.82\)), journalists with experiences of campaign coverage used more words relating to the past five presidential elections in their news reporting of the 2016 race (\(M = 5.76, SD = 3.68\)). These results with moderate effect size suggest that anchoring on the past occurred in news coverage of the 2016 race according to journalists’ prior experience of presidential campaign coverage (supporting H3).
+
+
+### Advanced graph: matrix of basic graphs
+
+当实验条件变得复杂时，就需要针对不同的实验条件绘制 graph，然后按照一定的顺序组合起来，实现比较的目的。本质上运用不同实验条件下的数据绘制的 graph 还是之前介绍的几种基本类型，只是额外多了一个组合的步骤。
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 example 06 facet using basic graph.png" alt="" width="100%"/>
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 example 07 facet with basic graphs.png" alt="" width="100%"/>
+
+在学习完本章内容以后，就可以轻松地绘制出上述 graphs。
+
+在假定数据已经整理成`tidy data`的情况下，data visualization 只有两个基本步骤：
+
+1. 脑海中构思绘制什么样的 graph；
+2. 用`ggplot2`实现。
+
+最难的其实是第一步，因为需要在脑海中就完成将数据转变为 graph 的过程。
+
+
+## Step 1: make a graph in your mind
+
+在脑海中构思如何将数据转变为 graph 的过程中，有一个非常重要的概念——**变量**（variable）。
+
+
+### Variable in graph
+
+在 data cleaning 章节讲到`tidy data`的概念时提到，`tidy data`最重要的特征就是一个 variable 一列，而绘制 graph 就是将原本是数字形式储存的 variable 信息用 graph 的形式呈现而已。图的复杂程度与 graph 中所蕴含的 variable 个数有直接联系。同时，单个 graph 中能够一次性清晰地呈现的 variable 个数是有上限的。
+
+一般情况下，按照心理学研究中的惯例，会将 variable 分为两大类，independent variable (IV，自变量)和 dependent variable (DV 因变量)。数据分析关心的是二者之间的关系，所以 data visualization 也是要服务于这个目的，能够清晰地呈现出 IV、DV 以及二者之间的关系才是合适的 graph。绘制 graph 时通常会将 DV 作为 y 轴（y-axis），将 IV 作为 x 轴（x-axis）。看一个简单的例子：
+
+```{r echo = FALSE}
+data_exams[, c("mandarin", "math")] |>
+  ggplot(aes(x = mandarin, y = math)) + 
+    geom_point()
+```
+
+很显然，这是一张 point graph，并且只展现了 2 个 variables （mandarin 和 math）的信息。反过来，如果想要绘制出这样的 point graph，数据中必须有 2 个 variables（2 列）。
+
+
+#### Continuous vs discrete
+
+根据具体数值，可以将 variable 分为两类，连续（continuous）和离散（discrete）。上一个例子中，mandarin 和 math 都是 continuous 的。continuous variable 和 discrete variable 适用的 graph 是不同的，需要根据具体情况来决定。在大多数情况下，DV 是 continuous 的，IV 可以是 continuous 也可以是 discrete 的，其中 discrete IV 可以作为分组标签。
+
+例如，如果想要研究 class (IV) 和 mandarin (DV) 的关系，那么显然前者是一个 discrete variable， 后者是一个 continuous variable，此时如果还用 point graph就不合适了。
+
+```{r echo = FALSE}
+data_exams[, c("class", "mandarin")] |> 
+  ggplot(aes(x = class, y = mandarin)) + 
+    geom_point()
+```
+
+应改为 bar graph：
+
+```{r echo = FALSE}
+data_exams[, c("class", "mandarin")] |> 
+  aggregate(.~ class, mean) |>
+  ggplot(aes(x = class, y = mandarin)) + 
+    geom_col()
+```
+
+上面的 graph 呈现的是不同 class 的 mandarin 均值，class 很自然地就作为分组标签。同样，这个 graph 也只呈现了 2 个 variables 的信息。反过来，如果想要绘制出这样的 bar graph，数据必须有 2 列，唯一的不同是在于这两列数据只有 3 行，储存的是各 class 在 mandarin 上的均值：
+
+```{r echo = FALSE}
+data_exams[, c("class", "mandarin")] |> 
+  aggregate(.~ class, mean)
+```
+
+同样的数据，也可以改用 line + point graph，在可视化均值的时候，两种类型的 graphs 呈现的信息是完全等价的：
+
+```{r echo = FALSE}
+data_exams[, c("class", "mandarin")] |> 
+  aggregate(.~ class, mean) |> 
+  ggplot(aes(x = class, y = mandarin, group = 1)) +
+    geom_line() + 
+    geom_point() + 
+    scale_y_continuous(limits = c(0, 80))
+```
+
+从前面的例子不难看出，最基本的 graphs 只能呈现出 2 个 variables 的信息，为数不多的例外是 histogram：
+
+```{r echo = FALSE}
+ggplot(data_exams, aes(x = mandarin)) + 
+    geom_histogram(bins = 30)
+```
+
+histogram 只能呈现 1 个 continuous variable 的信息，x-axis 代表该 variable，y-axis 是将该 variable 分成若干区间然后计数的结果。
+
+
+#### Complex graph with multiple variables
+
+那如果需要在 basic graph 里一次性清晰地呈现多于 2 个 variables 的信息该怎么办？
+
+- 3 variables, gender (discrete, IV), exam (discrete, IV) and mandarin (continuous, DV);
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "math", "english", "class", "school")] |> 
+  aggregate(.~ gender + exam, mean) |>
+  ggplot(aes(x = gender, y = mandarin, group = exam, fill = exam)) + 
+    geom_col(position = "dodge")
+```
+
+上图呈现的是不同的 gender 在两次考试（last 和 current）上的均值，一共是 3 个 variables。反过来，要绘制出这样的 graph，数据必须有 3 列：
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "math", "english", "class", "school")] |> 
+  aggregate(.~ gender + exam, mean)
+```
+
+上面的 graph 可以视作是单张 graph 中可以一次性清晰地呈现的 variables 个数的上限，即 3 个。再呈现更多的 variables 就会让 graph 变得逐渐臃肿。
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "gender", "math", "school")] |> 
+  ggplot(aes(x = mandarin, y = english, shape = exam, color = class)) + 
+    geom_point()
+```
+
+此时，使用 matrix of subgraphs 的方式呈现会更加清晰。
+
+- 4 variables, gender (discrete, IV), class (discrete, IV), exam (discrete, IV) and mandarin (continuous, DV):
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "math", "english", "school")] |> 
+  aggregate(.~ gender + class + exam, mean) |> 
+  ggplot(aes(x = gender, y = mandarin, group = exam, fill = exam)) + 
+    geom_col(position = "dodge") + 
+    facet_grid(cols = vars(class))
+```
+
+反过来，要画出这样的 graph，数据必须有 4 列：
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "math", "english", "school")] |> 
+  aggregate(.~ gender + class + exam, mean)
+```
+
+- 5 variables, gender (discrete, IV), class (discrete, IV), school (discrete, IV), exam (discrete, IV) and mandarin (continuous, DV): 
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "math", "english")] |> 
+  aggregate(.~ gender + class + exam + school, mean) |> 
+  ggplot(aes(x = gender, y = mandarin, group = exam, fill = exam)) + 
+    geom_col(position = "dodge") + 
+    facet_grid(cols = vars(class), rows = vars(school))
+```
+
+反过来，要绘制出这样的 graph，数据必须有 5 列：
+
+```{r echo = FALSE}
+data_exams[!names(data_exams) %in% c("age", "math", "english")] |> 
+  aggregate(.~ gender + class + exam + school, mean)
+```
+
+上面的 graph 可以视作是 matrix 的方式能够一次性清晰地呈现的 variables 个数上限，即 5 个。
+
+假定数据已经整理成`tidy data`，在明确了 variables 和 graph 之间的关系后，对于绘制 graph 时需要用到几列就能做到心里有数了。
+
+
+### Choose appropriate graph
+
+那么如何选择合适的 graph？三条建议：
+
+- 心理学的数据分析中均值比较是最常见的可视化任务，此时用 bar graph 或 line + point graph 都可以；
+- 如果是要探索 1 个 continuous variable 的分布，用 histogram；
+- 如果是要探索 2 个 continuous variables 的关系，用 point graph。
+
+掌握以上三条建议就能够解决很多问题。
+
+
+## Step 2: produce the graph in your mind using `ggplot2`
+
+至此，就能大体上完成 data visualization 的第一步，已经知道要绘制什么样的 graph，并且要知道要把数据整理成什么样子。万事俱备，只欠`ggplot2`。如何把脑海中的 graph 使用`ggplot2`绘制出来，只需要掌握它的 grammar of graphics 即可。
+
+Grammar of graphics 一共包含 5 个成分，3 个关键成分和 2 两个额外成分。
+
+
+### Three key components
+
+`ggplot2`的核心就是 Grammar of Graphics，它可以简单理解为：任意图形都是将数据（`data`）映射（`mapping`）到几何对象（`geometric objects`, `geom`）的图形属性（`aesthetic attribute`，`aes`）上去。
+
+上述理解只需要 3 个关键成分即可：
+
+1. `data`;
+2. `aes`: a set of aesthetic mappings between variables in the data and visual properties;
+3. `geom`: at least one layer which describes how to render each observation. Layers are usually created with a `geom` function.
+
+例如（图片改动自[R for Data Science (2nd edition)](https://r4ds.had.co.nz/data-visualisation.html#the-layered-grammar-of-graphics)）：
+
+- 整理数据，描述统计；
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 basic formula 01.png" alt="" width="100%"/>
+
+- 将 data 中的 cut (variable) maps 到 color 上；
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 basic formula 02.png" alt="" width="100%"/>
+
+- 将 data 中的 cut maps 到 x-axis，将 count maps 到 y-axis 上，使用 bar graph 来最终呈现上述所有 mappings。
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 basic formula 03.png" alt="" width="100%"/>
+
+使用 3 个关键成分绘制 graph 的通用代码模板如下：
+```{r eval = FALSE}
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
+```
+
+其中，`ggplot()`用来初始化一个`ggpolt object`。`<GEOM_FUNCTION>`则是具体的 graph 类型，`aes(<MAPPINGS>)`是针对所使用的 graph 类型的 `aesthetic mappings`。`ggplot2`采用了一种多层的设计，不同层之间用`+`分割。这种结构化的设计可以方便地通过叠加不同的层绘制复杂的 graph，这一点会在后续的讲解中得到充分体现。
+
+`ggplot()`中使用的`data`是 global 的，可以继承给`<GEOM_FUNCTION>`，同样，`ggplot()`中的`aes(<MAPPINGS>)`也是 global 的，例如：
+```{r eval = FALSE}
+ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) + 
+  <GEOM_FUNCTION_01>() + 
+  <GEOM_FUNCTION_02>()
+```
+
+上述代码中，`<GEOM_FUNCTION_01>`和`<GEOM_FUNCTION_02>`都从`ggplot()`中继承了`mapping = aes(<MAPPINGS>)`的设定。同时，有 global 也就意味着有 local，即如果有需要的话，每一层都可以使用自己独立的`data`和`aes()`（详见 some tricks 小节），例如：
+```{r eval = FALSE}
+ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) + 
+  <GEOM_FUNCTION_01>(data = <DATA_01>, mapping = aes(<MAPPINGS_01>)) + 
+  <GEOM_FUNCTION_02>(data = <DATA_02>, mapping = aes(<MAPPINGS_01>))
+```
+
+
+例如，要绘制上述例子中的 bar graph，具体代码如下：
+
+```{r basic_bar}
+diamonds |> 
+  dplyr::count(cut, name = "count") |> 
+  ggplot() + 
+    geom_col(mapping = aes(x = cut, y = count, fill = cut))
+```
+
+3 个关键成分中的`data`只需整理成`tidy data`即可，下面来分别看`geom`和`aes`。
+
+
+#### `geom`
+
+`geom`决定了`scale`的最终呈现形式，所以不同的 graph 对应不同的`geom_fun`。常用的如下：
+
+- line: `geom_line()`, x discrete，y continuous;
+- point: `geom_point()`, x continuous, y continuous;
+- bar: `geom_bar()` or `geom_col()`, x discrete, y continuous;
+- histogram: `geom_histogram()`, x continuous;
+- error bar: `geom_errorbar()`, x discrete, y continuous.
+
+**基本用法**
+
+- point: `geom_point()`, x continuous, y continuous;
+
+```{r point_basic}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english))
+```
+
+- bar: 
+  a. `geom_bar()`, x discrete;
+  b. `geom_col()`, x discrete, y continuous.
+
+```{r bar_basic}
+# geom_bar() makes the height of the bar proportional to the number of cases in each group
+data_exams |>
+  ggplot() + 
+    geom_bar(aes(x = age))
+# geom_col leaves the data as is, it makes heights of the bars to represent values (summed, if multiple) in the data.
+data_exams |>
+  ggplot() + 
+    geom_col(aes(x = age, y = mandarin))
+# geom_col() equivalent
+data_exams[, c("age", "mandarin")] |>
+  aggregate(.~age, sum) |>
+  ggplot() + 
+    geom_col(aes(x = age, y = mandarin))
+# geom_bar() equivalent
+data_exams |> 
+  dplyr::count(age, name = "count") |>
+  ggplot() + 
+    geom_col(aes(x = age, y = count))
+# use geom_col() for mean comparison, 
+data_exams[, c("age", "mandarin")] |>
+  aggregate(.~ age, mean) |>
+  ggplot() + 
+    geom_col(aes(x = age, y = mandarin))
+```
+
+- histogram: `geom_histogram()`, x continuous;
+
+```{r histogram_basic}
+data_exams |> 
+  ggplot() + 
+    geom_histogram(mapping = aes(x = mandarin))
+```
+
+- error bar: `geom_errorbar()`, x discrete, y continuous.
+
+```{r errorbar_basic}
+data_exams |>
+  dplyr::group_by(gender)  |> 
+  dplyr::summarise(
+    mean = mean(mandarin),
+    se = sd(mandarin)/sqrt(nrow(data_exams))
+  ) |>
+  ggplot() + 
+    geom_errorbar(mapping = aes(x = gender, ymin = mean - se, ymax = mean + se))
+```
+
+
+#### `aes`: `scale`
+
+`ggplot2`将`data` `map` 到 `aes` 的过程统称为 `scaling`，因为每一种`aes`都可以视作是将`data` `map` 到一个特定的`scale`上。换言之，一个 graph 里有多少个`aes mapping`，就有多少个`scales`。
+
+`aes`要素最主要的有两种：
+
+1. `position`: 数据在 graph 中的位置，对应 x-axis 和 y-axis；
+2. `color` or `fill`: graph 中元素的颜色，前者适用于 line 和 point，后者适用于 bar 和 histogram。
+
+除此之外，还有以下几种额外的`aes`要素:
+
+1. `group`: graph 中元素的分组，适用于 line graph，同一组元素会用同一条线连接，只适用于 discrete variable；
+2. `linetype`: line graph 中线条的形状，只适用于 discrete variable；
+3. `shape`: point graph 中点的形状，只适用于 discrete variable。
+4. `size`: i.e. point graph 中点的大小，最适用于 continuous variable。
+
+以上所有`scale`都可以作为`argument`包裹在`aes()`中，然后整体作为`mapping`这个`argument`的`value`。
+
+- `position`, `x` and/or `y`
+
+```{r position}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english))
+```
+
+- `color` or `fill`
+
+```{r color_fill}
+# color example 1, point, discrete
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender))
+# color example 2, point, continuous
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = math))
+# fill example 1, bar, discrete
+data_exams |>
+  ggplot() + 
+    geom_bar(aes(x = age, fill = gender))
+# fill example 2, bar, continuous
+diamonds |> 
+  dplyr::count(cut, name = "count") |> 
+  ggplot() + 
+    geom_col(mapping = aes(x = cut, y = count, fill = count))
+# fill example 3, histogram
+data_exams |> 
+  ggplot() + 
+    geom_histogram(mapping = aes(x = mandarin, fill = gender))
+```
+
+其中，bar 和 histogram 中的 bin 情况下默认都是采用堆叠（stack）的方式，如果需要调整，请参考 modify the graph 小节。
+
+注意一个细节，如果希望`color`或`fill`能代表一个额外的 variable（既非 x-axis 所对应的 variable，又非 y-axis 所对应的 variable），从而实现给 graph 多添加一个分组的信息，那么需要将该 variable 作为 `color`或`fill` 的参数（参见上面的例子）。反之，如果只是想让图形变成彩色，并不额外添加分组的信息，那么有两种方式：
+
+  1. 放在`aes()`内，将 x-axis 对应的 variable 作为`color`或`fill`的`value`；
+
+```{r fill_within_aes_same_var}
+data_exams |>
+  ggplot() + 
+    geom_bar(aes(x = age, fill = age))
+```
+
+  2. 放在`aes()`外，将`color`或`fill`作为`setting`，实现固定整个 graph 内所有对应元素为同一颜色的效果。
+
+```{r fill_as_setting}
+data_exams |>
+  ggplot() + 
+    geom_bar(aes(x = age), fill = "blue")
+```
+
+注：放在`aes()`外的这个小技巧也同样适用于`shape`、`linetype`和`size`，只要放在`aes()`外，就变成一个 `setting`，作用于整个 graph。
+
+以上两种方式可以根据需要选择。
+
+- `group`: discrete variable
+
+正常情况下，line graph 会自动将坐标系空间里的若干个点连起来形成 line，所以需要知道哪些点是在同一组，就用同一条线连这些点。`group`就是用来控制这个分组，分组显然是要依据 discrete variable。
+
+```{r group}
+data_exams[, c("class", "gender", "english")] |> 
+  aggregate(.~ class + gender, mean) |>
+  ggplot() + 
+    geom_line(mapping = aes(x = class, y = english, group = gender))
+```
+
+但上述 line graph 中的不同 line 的指向并不清晰，所以可以通过增加`color`的方式标明：
+
+```{r group_color}
+# group + color
+data_exams[, c("class", "gender", "english")] |> 
+  aggregate(.~ class + gender, mean) |>
+  ggplot() + 
+    geom_line(mapping = aes(x = class, y = english, group = gender, color = gender))
+```
+
+注意，此时`color`和`group`要使用同一 discrete variable。使用`color + group`的方式也是给 line graph 多呈现了一个 discrete variable 的信息。
+
+- `linetype`: discrete variable
+
+`linetype`和`color`的效果类似，只不过一个是改变形状，另一个是改变颜色。`linetype`同样也需要搭配`group`使用
+
+```{r linetype}
+data_exams[, c("class", "gender", "english")] |> 
+  aggregate(.~ class + gender, mean) |>
+  ggplot() + 
+    geom_line(mapping = aes(x = class, 
+                            y = english, 
+                            group = gender, 
+                            linetype = gender))
+```
+
+同样，`linetype`也可以和`color`组合使用：
+
+```{r linetype_color}
+data_exams[, c("class", "gender", "english")] |> 
+  aggregate(.~ class + gender, mean) |>
+  ggplot() + 
+    geom_line(mapping = aes(x = class, 
+                            y = english, 
+                            group = gender, 
+                            linetype = gender, 
+                            color = gender))
+```
+
+- `shape`: discrete variable
+
+```{r shape}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, shape = class))
+```
+
+`shape`也可以和`color`组合使用，让图像更加清晰，但注意二者要使用同一 discrete variable。
+
+```{r shape_color}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, shape = class, color = class))
+```
+
+- `size`: continuous variable or discrete variable with meaningful scale
+
+```{r size}
+head(data_exams)
+# continuous, recommended
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, size = math))
+# discrete, not recommended
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, size = age))
+```
+
+总结一下，如果要在单张 graph 呈现 3 个 variables 的信息时，如 1 continuous DV + 2 IV（其中 1 个是 discrete），那么就可以在各种 graph 里使用以下`scale`来实现，假定 discrete variable 为 var_dis，continuous variable 为 var_con：
+
+- `color = var_dis` (`+ group = var_dis` for `geom_line()` when x-aix variable is discrete), or `color = var_con`;
+- `fill = var_dis` (for `geom_bar()`) or `fill = var_con` (for `geom_histogram()`);
+- `linetype = var_dis` (`+ group = var_dis` for `geom_line()` when x-aix variable is discrete);
+- `shape = var_dis` (e.g.`geom_point()`);
+- `size = var_con` (e.g. `geom_point()`).
+
+另外再补充两点细节：
+
+1. x-axis variable in `geom_line()`: factor vs numeric
+
+line graph 的 x-axis 天然适合 discrete variable。在`R`中，可以大致上将`character atomic vector`或`factor`视作是`discrete`。但`geom_line()`在处理这两种类型的 variable 时，会看到如下提示并给出空白的 Graph：
+
+```{r geom_factor}
+data_exams[, c("class", "mandarin")] |> 
+  aggregate(.~ class, mean) |>
+  ggplot() + 
+    geom_line(mapping = aes(x = class, y = mandarin))
+```
+
+这是因为 line graph 本质上是将坐标系中的点连起来，`geom_line()`需要知道哪些点是用同一条线连起来，所以就需要提供`group`信息，否则`geom_line()`无法出图。针对这种情况，有两种解决方案：
+
+```{r geom_factor_solution}
+# solution 1, add group (recommended)
+data_exams[, c("class", "mandarin")] |> 
+  aggregate(.~ class, mean) |>
+  ggplot() + 
+    geom_line(mapping = aes(x = class, y = mandarin, group = 1))
+# solution 2, convert x into continuous variable
+data_exams$class <- factor(data_exams$class, labels = 1:3)
+data_exams[, c("class", "mandarin")] |> 
+  aggregate(.~ class, mean) |> 
+  ggplot() + 
+    geom_line(mapping = aes(x = as.numeric(class), y = mandarin))
+```
+
+2. combine different graphs: line + point + errorbar 
+
+心理学研究中最常见的均值比较折线图可以用`geom_point() + geom_line() + geom_errorbar()`的方式绘制：
+
+```{r point_line_errorbar}
+data_exams[, c("class", "gender", "mandarin")] |>
+  dplyr::group_by(class, gender)  |> 
+  dplyr::summarise(
+    mean = mean(mandarin),
+    se = sd(mandarin)/sqrt(nrow(data_exams))
+  ) |>
+  ggplot(mapping = aes(x = class, y = mean, color = gender)) + 
+    geom_point() +
+    geom_line(mapping = aes(group = gender)) + 
+    geom_errorbar(mapping = aes(ymin = mean - se, ymax = mean + se))
+# what will happen if we remove the group argument in aes()?
+```
+
+如果希望 point 的区别更加明显，还可以增加`shape`：
+
+```{r point_line_errorbar_clearer}
+data_exams[, c("class", "gender", "mandarin")] |>
+  dplyr::group_by(class, gender)  |> 
+  dplyr::summarise(
+    mean = mean(mandarin),
+    se = sd(mandarin)/sqrt(nrow(data_exams))
+  ) |>
+  ggplot(mapping = aes(x = class, y = mean, color = gender)) + 
+    geom_point(mapping = aes(shape = gender)) +
+    geom_line(mapping = aes(group = gender)) + 
+    geom_errorbar(mapping = aes(ymin = mean - se, ymax = mean + se))
+```
+
+
+### Two additional components
+
+#### `facet`: matrix of many similar graphs
+
+当数据中可用作分组信息的 discrete variable 很多时，单一的 graph 显然无法承载这么多信息（最多同时呈现 1 continuous DV + 2 IV）。此时就需要`facet`，绘制一个大的 graph matrix，每一个 element 是一个 graph，对应整个数据集中的一个 subset。
+
+有两个函数可以使用：
+
+- `facet_wrap()`: “wraps” a 1d ribbon of panels into 2d.
+- `facet_grid()`: produces a 2d grid of panels defined by variables which form the rows and columns.
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 facet illustration.png" alt="" width="80%"/>
+
+（图片来自[ggplot2: Elegant Graphics for Data Analysis (3rd edition)](https://ggplot2-book.org/facet.html)）
+
+`facet_wrap(facets, nrow = NULL, ncol = NULL)`:
+
+- `facets`: A set of variables or expressions quoted by `vars()` and defining faceting groups on the rows or columns dimension. For compatibility with the classic interface, can also be a formula or character vector. Use either a one sided formula, `~a + b`, or a character vector, `c("a", "b")`.
+- `nrow, ncol`: Number of rows and columns.
+
+```{r facet}
+data_plot <- mpg[mpg$cyl != 5 & mpg$drv %in% c("4", "f") & mpg$class != "2seater", ]
+data_plot
+levels(factor(data_plot$class))
+  ggplot(data = data_plot, aes(displ, hwy)) + 
+    geom_blank() + 
+    facet_wrap(~class, ncol = 3)
+# equivalent 01
+# facet_wrap(vars(class), ncol = 3)
+# equivalent 02
+# facet_wrap("class", ncol = 3)
+```
+
+`facet_grid(rows = NULL, cols = NULL)`:
+
+- `rows`, `cols`: A set of variables or expressions quoted by `vars()` and defining faceting groups on the rows or columns dimension. For compatibility with the classic interface, `rows` can also be a `formula` with the `rows` (of the tabular display) on the `LHS` and the `columns` (of the tabular display) on the `RHS`; the dot in the formula is used to indicate there should be no faceting on this dimension (either row or column).
+
+1. `. ~ a` spreads the values of `a` across the columns. This direction facilitates horizontal comparisons of `y` position, because the vertical scales are aligned.
+
+```{r facet_grid_col}
+data_plot <- mpg[mpg$cyl != 5 & mpg$drv %in% c("4", "f") & mpg$class != "2seater", ]
+data_plot
+levels(factor(data_plot$class))
+  ggplot(data = data_plot, aes(displ, hwy)) + 
+    geom_blank() + 
+    facet_grid(. ~ cyl)
+# equivalent
+# facet_grid(cols = vars(cyl))
+```
+
+2. `b ~ .` spreads the values of `b` down the rows. This direction facilitates vertical comparison of `x` position because the horizontal scales are aligned. 
+
+```{r facet_grid_row}
+data_plot <- mpg[mpg$cyl != 5 & mpg$drv %in% c("4", "f") & mpg$class != "2seater", ]
+levels(factor(data_plot$class))
+  ggplot(data = data_plot, aes(displ, hwy)) + 
+    geom_blank() + 
+    facet_grid(drv ~ .)
+# equivalent
+# facet_grid(rows = vars(drv))
+```
+
+
+## Modify graph*
+
+前面展示的都是所有 graph 在默认设定下的用法，但显然有部分图形看起来是很难看的，例如：
+
+```{r echo = FALSE}
+data_exams[, c("class", "gender", "mandarin")] |>
+  dplyr::group_by(class, gender)  |> 
+  dplyr::summarise(
+    mean = mean(mandarin),
+    se = sd(mandarin)/sqrt(nrow(data_exams))
+  ) |>
+  ggplot(mapping = aes(x = class, y = mean, color = gender)) + 
+    geom_point(mapping = aes(shape = gender)) +
+    geom_line(mapping = aes(group = gender)) + 
+    geom_errorbar(mapping = aes(ymin = mean - se, ymax = mean + se))
+```
+
+调整成这样就好看多了：
+
+```{r echo = FALSE}
+data_exams[, c("class", "gender", "mandarin")] |>
+  dplyr::group_by(class, gender)  |> 
+  dplyr::summarise(
+    mean = mean(mandarin),
+    se = sd(mandarin)/sqrt(nrow(data_exams))
+  ) |>
+  ggplot(mapping = aes(x = class, y = mean, color = gender)) + 
+    geom_point(mapping = aes(shape = gender), size = 3) +
+    geom_line(mapping = aes(group = gender)) + 
+    scale_y_continuous(name = "mandarin", limits = c(70, 80)) + 
+    geom_errorbar(mapping = aes(ymin = mean - se, ymax = mean + se), width = 0.1) + 
+    theme_bw() + 
+    theme(text = element_text(size = 16))
+```
+
+所以，这时候就需要知道如何调整 graph 中的视觉要素。通常一张 graph 可以包含的视觉要素如下图所示：
+
+<img style = "display: block; margin: auto;" src="images/ggplot2 scale and guide terms.png" alt="" width="100%"/>
+
+其中与`scale`紧密联系的一个概念是`guide`。`axis`或`legend`就是`guide`。只有借助`guide`，才可以知道 graph 中的 point 是如何与`data`一一对应的。
+
+
+### Frequently modified visual elments
+
+`ggplo2`根据使用的频率，给 graph 最经常被调整的几个视觉元素配置了单独的`function()`，包括`lims()`, `labs()`, `guides()`。
+
+- `lims(...)`: The maximum and minimum of the scale. A name–value pair. The name must be an aesthetic, and the value must be either a length-2 numeric, a character, a factor, or a date/time. A numeric value will create a continuous scale. If the larger value comes first, the scale will be reversed. You can leave one value as NA if you want to compute the corresponding limit from the range of the data. A character or factor value will create a discrete scale. A date-time value will create a continuous date/time scale.
+
+```{r lims}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    lims(x = c(50, 100), y = c(50, 100))
+```
+
+- `labs()`: The labels of scale and plot.
+
+```{r eval = FALSE}
+labs(
+  ...,
+  title = waiver(),
+  subtitle = waiver(),
+  caption = waiver()
+)
+
+```
+
+  a. `...`: A list of new name-value pairs. The name should be an aesthetic.
+
+```{r labs_inherit}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    labs(x = "语文", y = "英语", color = "性别")
+# labs(x = NULL, y = NULL, color = NULL) to remove corresponding label
+```
+
+  b. `title`: Graph title.
+  
+```{r labs_title}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    labs(title = "This is a title")
+```
+
+  c. `subtitle`: Graph subtitle.
+  
+```{r labs_subtitle}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    labs(title = "This is a title", 
+         subtitle = "This is a subtitle")
+```
+
+  d. `caption`: The text for the caption which will be displayed in the bottom-right of the plot by default.
+  
+```{r labs_caption}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    labs(title = "This is a title", 
+         subtitle = "This is a subtitle", 
+         caption = "This is a caption")
+```
+
+- `guides`: 
+
+```{r}
+
+```
+
+
+### Modify scale
+
+一张 graph 里面所有的要素可以根据是否与数据有关分为两大类：
+
+- data related element: `aes`
+- non-data element: background color, font size, typeface, etc.
+
+
+### data related element: `scale`
+
+`ggplot2`中`scale`由`scale_xxx()`来控制，`scale_xxx()`的命名由 3 个部分组成：
+
+1. The `scale` prefix;
+2. The name of the corresponding aesthetic (e.g., `x`, `color`, `shape`, etc.);
+3. The nature of the scale (e.g., continuous, discrete, etc.)
+
+以下图为例：
+
+```{r echo = FALSE}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender))
+```
+
+图中一共有 3 个`scales`，分别对应`scale_x_continuous()`，`scale_y_continuous()`和`scale_color_discrete()`。下面以`scale_x_continuous()`和`scale_x_discrete()`为例讲解：
+
+
+#### `scale_x_continuous`和`scale_y_continuous`
+
+```{r eval = FALSE}
+scale_x_continuous(
+  name = waiver(),
+  breaks = waiver(), 
+  n.breaks = NULL, 
+  labels = waiver(),
+  limits = NULL,
+  guide = waiver(),
+  position = "bottom" # or "top", position = "left"/"right" for scale_y_continuous()
+)
+```
+
+- `name`: The name of the scale. Used as the axis title.
+
+```{r}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(name = "语文")
+```
+
+- `breaks`: The positions of the tick marks. The algorithm may choose a slightly different number to ensure nice break labels.
+
+```{r}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(breaks = seq(40, 100, 10))
+# though not all tick marks are displayed, we can check whether the breaks works as expected using the labels,
+# recommend to use breaks together with limits
+```
+
+- `n.breaks`: Number of tick marks. The algorithm may choose a slightly different number to ensure nice break labels.
+
+```{r}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(n.breaks = 3)
+```
+
+- `labels`: Tick labels. Must be the same length as `breaks`.
+
+```{r scale_x_continuous_labels}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(breaks = c(60, 70, 80, 90), 
+                       labels = c("六十", "七十", "八十", "九十"))
+```
+
+- `limits`: A numeric vector of length two. The limits of the scale.
+
+```{r scale_x_continuous_limits,}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(limits = c(40, 100))
+```
+
+- `guide`: Control the visual representation of scale. 
+
+因为此时讲解的是`x-axis`，对应的是`guide_axis()`。更多的`guide`请参考 [Scale guides](https://ggplot2-book.org/scales-guides.html#scale-guide)。
+
+```{r eval = FALSE}
+guide = guide_axis(
+  title = waiver(),  
+  check.overlap = FALSE,  # silently remove overlapping labels
+  angle = NULL, 
+  n.dodge = 1, 
+  position = waiver()
+)
+```
+
+  a. `title`: # scale title
+
+```{r scale_x_continuous_guide_title}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(guide = guide_axis(title = "语文")) # equivalent to scale_x_continuous(name = "语文")
+```
+
+  b. `check.overlap`: # silently remove overlapping labels
+
+```{r scale_x_continuous_guide_checkoverlap}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(limits = c(60, 100), 
+                       breaks = 60:100,
+                       labels = 60:100 + 1000, 
+                       guide = guide_axis(check.overlap = TRUE))
+```
+
+  c. `angle`: The angle of tick label.
+  
+```{r scale_x_continuous_guide_angle}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(limits = c(60, 100), 
+                       breaks = 60:100,
+                       labels = 60:100 + 1000, 
+                       guide = guide_axis(angle = 45))
+```
+
+  d. `n.dodge`: # The number of rows (for vertical axes) or columns (for horizontal axes) that should be used to render the labels. This is useful for displaying labels that would otherwise overlap.
+
+```{r scale_x_continuous_guide_ndoge}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(limits = c(60, 100), 
+                       breaks = 60:100,
+                       labels = 60:100 + 1000, 
+                       guide = guide_axis(n.dodge = 2))
+```
+
+  e. `position`: The position of
+  
+```{r scale_x_continuous_guide_position}
+data_exams |> 
+  ggplot() + 
+    geom_point(mapping = aes(x = mandarin, y = english, color = gender)) + 
+    scale_x_continuous(guide = guide_axis(position = "top")) # equivalent to scale_x_continuous(position = "top")
+```
